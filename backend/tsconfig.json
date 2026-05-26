@@ -13,6 +13,6 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/database/migrations/.t1685020000000-CreateUsersTable.ts"],
   "exclude": ["node_modules", "dist"]
 }
