@@ -8,10 +8,12 @@
     "dev": "npx nodemon",
     "dev:ts": "node --loader ts-node/esm src/server.ts",
     "dev:watch": "npx nodemon",
+    "build": "tsc -p tsconfig.build.json",
+    "start:prod": "node dist/server.js",
     "db:migrate:run": "typeorm-ts-node-esm migration:run -d src/database/data-source.ts",
     "db:migrate:revert": "typeorm-ts-node-esm migration:revert -d src/database/data-source.ts",
-    "db:migration:generate": "typeorm-ts-node-esm migration:generate src/database/migrations/$npm_config_name -d src/database/data-source.ts",
-    "db:migration:create": "typeorm-ts-node-esm migration:create src/database/migrations/$npm_config_name"
+    "db:migration:generate": "typeorm-ts-node-esm migration:generate -d src/database/data-source.ts",
+    "db:migration:create": "typeorm-ts-node-esm migration:create"
   },
   "keywords": [],
   "author": "",

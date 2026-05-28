@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { AppDataSource } from '../../database/data-source.ts';
-import { User } from './user.entity.ts';
+import { AppDataSource } from '../../database/data-source.js';
+import { User } from './user.entity.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-me';
 const SALT_ROUNDS = 10;
