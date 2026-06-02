@@ -1,22 +1,37 @@
 import dotenv from 'dotenv';
-import app from './app.ts';
+import { AppDataSource } from './database/data-source.ts';
 
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
-const server = app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+async function startServer() {
+  try {
+    await AppDataSource.initialize();
+    const { default: app } = await import('./app.ts');
 
-server.on('error', (err) => {
-  console.error('Server failed to start:', err.message);
-  process.exit(1);
-});
+    const server = app.listen(PORT, () => {
+      console.log(`Server is running on http://localhost:${PORT}`);
+    });
 
-const cleanup = () => {
-  server.close(() => process.exit(0));
-};
+    server.on('error', (err) => {
+      console.error('Server failed to start:', err.message);
+      process.exit(1);
+    });
 
-process.on('SIGTERM', cleanup);
-process.on('SIGINT', cleanup);
+    const cleanup = () => {
+      server.close(() => process.exit(0));
+    };
+
+    process.on('SIGTERM', cleanup);
+    process.on('SIGINT', cleanup);
+  } catch (err) {
+    console.error('Failed to initialize database or start server:', err);
+    process.exit(1);
+  }
+}
+
+startServer();
+
+
+

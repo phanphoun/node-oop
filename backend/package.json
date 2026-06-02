@@ -4,8 +4,8 @@
   "description": "",
   "main": "src/server.ts",
   "scripts": {
-    "start": "npx ts-node --esm src/server.ts",
-    "dev": "npx ts-node --esm src/server.ts",
+    "start": "node --loader ts-node/esm src/server.ts",
+    "dev": "node --loader ts-node/esm src/server.ts",
     "dev:watch": "npx nodemon --watch src --exec \"npx ts-node --esm src/server.ts\"",
     "db:migrate:run": "node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
     "db:migrate:revert": "node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
@@ -25,18 +25,18 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.4.3",
-    "reflect-metadata": "^0.1.13",
-    "typeorm": "^0.3.18"
+    "reflect-metadata": "^0.1.13"
   },
   "devDependencies": {
     "@types/cors": "^2.8.18",
     "@types/express": "^4.17.21",
     "@types/node": "^20.4.1",
     "nodemon": "^3.1.14",
-    "ts-node": "^10.9.1",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
+    "tslib": "^2.8.1",
+    "typeorm": "^1.0.0",
     "typescript": "^5.2.2"
   }
 }
