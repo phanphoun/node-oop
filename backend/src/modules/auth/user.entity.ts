@@ -3,13 +3,9 @@ import {
   PrimaryColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-
-export enum UserRole {
-  Admin = 'Admin',
-  BusinessOwner = 'BusinessOwner',
-  Buyer = 'Buyer',
-}
+import { UserRole } from '../../constants/roles.enum.js';
 
 @Entity('users')
 export class User {
@@ -39,4 +35,9 @@ export class User {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
 }
+
+export { UserRole };
