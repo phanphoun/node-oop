@@ -11,6 +11,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowImportingTsExtensions": true,
+    "isolatedModules": true,
     "noEmit": true
   },
   "include": ["src/**/*"],
