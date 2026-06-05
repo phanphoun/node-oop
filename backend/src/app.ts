@@ -9,7 +9,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/', (_req, res) => res.json({ success: true, message: 'BuyNow backend API is running' }));
+app.get('/', (req,res) =>{
+    res.send('Welcome to buynow website.')
+})
 
 app.use('/api', routes);
 

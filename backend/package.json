@@ -4,6 +4,7 @@
   "description": "",
   "main": "src/server.ts",
   "scripts": {
+    "test": "node --loader ts-node/esm --test tests/endpoints.test.ts",
     "start": "node --loader ts-node/esm src/server.ts",
     "dev": "npx nodemon",
     "dev:ts": "node --loader ts-node/esm src/server.ts",
