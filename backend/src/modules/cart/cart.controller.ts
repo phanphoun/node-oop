@@ -1,68 +1,59 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Response } from 'express';
 import { CartService } from './cart.service.js';
+import type { AuthRequest } from '../../shared/interfaces/request.interface.js';
+import { noContent, success } from '../../core/utils/response.util.js';
 
-const service = new CartService();
+const cartService = new CartService();
 
-export const show = async (req: Request, res: Response) => {
+const toQuantity = (value: unknown, fallback = 1) => {
+  const quantity = Number(value);
+  return Number.isInteger(quantity) ? quantity : fallback;
+};
+
+export const getCart = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const buyerId = req.params.buyerId || req.query.buyerId as string;
-    if (!buyerId) {
-      res.status(400).json({ success: false, message: 'buyerId is required' });
-      return;
-    }
-
-    const cart = await service.getCart(buyerId);
-    res.json({ success: true, data: cart });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
+    success(res, await cartService.getCart(req.user!.id));
+  } catch (err) {
+    next(err);
   }
 };
 
-export const addItem = async (req: Request, res: Response) => {
+export const addToCart = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { buyerId, productId, quantity } = req.body;
-
-    if (!buyerId || typeof buyerId !== 'string') {
-      res.status(400).json({ success: false, message: 'buyerId is required' });
-      return;
-    }
-    if (!productId || typeof productId !== 'string') {
-      res.status(400).json({ success: false, message: 'productId is required' });
-      return;
-    }
-    if (!quantity || typeof quantity !== 'number' || quantity < 1) {
-      res.status(400).json({ success: false, message: 'quantity must be at least 1' });
-      return;
-    }
-
-    const cart = await service.addItem(buyerId, productId, quantity);
-    res.status(201).json({ success: true, data: cart });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message });
+    const { productId, quantity } = req.body as Record<string, unknown>;
+    success(
+      res,
+      await cartService.addItem(req.user!.id, {
+        productId: typeof productId === 'string' ? productId : '',
+        quantity: toQuantity(quantity),
+      }),
+      201,
+      'Product added to cart',
+    );
+  } catch (err) {
+    next(err);
   }
 };
 
-export const updateItem = async (req: Request, res: Response) => {
+export const updateCartItem = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { quantity } = req.body;
-    if (!quantity || typeof quantity !== 'number' || quantity < 1) {
-      res.status(400).json({ success: false, message: 'quantity must be at least 1' });
-      return;
-    }
-
-    await service.updateItemQuantity(req.params.id, quantity);
-    res.json({ success: true, message: 'Cart item updated' });
-  } catch (err: any) {
-    const status = err.message.includes('not found') ? 404 : 400;
-    res.status(status).json({ success: false, message: err.message });
+    const { quantity } = req.body as Record<string, unknown>;
+    success(
+      res,
+      await cartService.updateItem(req.user!.id, req.params.id, toQuantity(quantity, 0)),
+      200,
+      'Cart updated successfully',
+    );
+  } catch (err) {
+    next(err);
   }
 };
 
-export const removeItem = async (req: Request, res: Response) => {
+export const removeCartItem = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    await service.removeItem(req.params.id);
-    res.json({ success: true, message: 'Cart item removed' });
-  } catch (err: any) {
-    res.status(404).json({ success: false, message: err.message });
+    await cartService.removeItem(req.user!.id, req.params.id);
+    noContent(res);
+  } catch (err) {
+    next(err);
   }
 };

@@ -1,106 +1,97 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { ProductService } from './product.service.js';
+import type { AuthRequest } from '../../shared/interfaces/request.interface.js';
+import { noContent, success } from '../../core/utils/response.util.js';
 
-const service = new ProductService();
+const productService = new ProductService();
 
-export const index = async (_req: Request, res: Response) => {
+const numberFromBody = (value: unknown, fallback = 0) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+};
+
+export const listProducts = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const products = await service.findAll();
-    res.json({ success: true, data: products });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
+    success(res, await productService.list(req.query));
+  } catch (err) {
+    next(err);
   }
 };
 
-export const show = async (req: Request, res: Response) => {
+export const topRatedProducts = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const product = await service.findById(req.params.id);
-    res.json({ success: true, data: product });
-  } catch (err: any) {
-    res.status(404).json({ success: false, message: err.message });
+    success(res, await productService.topRated(numberFromBody(req.query.limit, 10)));
+  } catch (err) {
+    next(err);
   }
 };
 
-export const store = async (req: Request, res: Response) => {
+export const getProduct = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const {
-      name,
-      description,
-      price,
-      sku,
-      stock,
-      status,
-      categoryId,
-      category_id,
-      image,
-      sellerId,
-      seller_id,
-    } = req.body;
-
-    if (!name || typeof name !== 'string' || name.length < 2) {
-      res.status(400).json({ success: false, message: 'Name must be at least 2 characters' });
-      return;
-    }
-    if (price === undefined || typeof price !== 'number' || price < 0) {
-      res.status(400).json({ success: false, message: 'Price must be a positive number' });
-      return;
-    }
-    if (stock !== undefined && (!Number.isInteger(stock) || stock < 0)) {
-      res.status(400).json({ success: false, message: 'Stock must be a non-negative integer' });
-      return;
-    }
-
-    const product = await service.create({
-      name,
-      description,
-      price,
-      sku,
-      stock,
-      status,
-      categoryId: categoryId ?? category_id,
-      image,
-      sellerId: sellerId ?? seller_id,
-    });
-    res.status(201).json({ success: true, data: product });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message });
+    success(res, await productService.getById(req.params.id));
+  } catch (err) {
+    next(err);
   }
 };
 
-export const update = async (req: Request, res: Response) => {
+export const createProduct = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { name, price, stock } = req.body;
-
-    if (name !== undefined && (typeof name !== 'string' || name.length < 2)) {
-      res.status(400).json({ success: false, message: 'Name must be at least 2 characters' });
-      return;
-    }
-    if (price !== undefined && (typeof price !== 'number' || price < 0)) {
-      res.status(400).json({ success: false, message: 'Price must be a positive number' });
-      return;
-    }
-    if (stock !== undefined && (!Number.isInteger(stock) || stock < 0)) {
-      res.status(400).json({ success: false, message: 'Stock must be a non-negative integer' });
-      return;
-    }
-
-    const product = await service.update(req.params.id, {
-      ...req.body,
-      categoryId: req.body.categoryId ?? req.body.category_id,
-      sellerId: req.body.sellerId ?? req.body.seller_id,
-    });
-    res.json({ success: true, data: product });
-  } catch (err: any) {
-    const status = err.message.includes('not found') ? 404 : 400;
-    res.status(status).json({ success: false, message: err.message });
+    const body = req.body as Record<string, unknown>;
+    success(
+      res,
+      await productService.create(
+        {
+          name: typeof body.name === 'string' ? body.name : '',
+          description: typeof body.description === 'string' ? body.description : null,
+          price: numberFromBody(body.price),
+          stock: numberFromBody(body.stock),
+          categoryId: typeof body.categoryId === 'string' ? body.categoryId : null,
+          image: typeof body.image === 'string' ? body.image : null,
+          sku: typeof body.sku === 'string' ? body.sku : null,
+          sellerId: typeof body.sellerId === 'string' ? body.sellerId : null,
+        },
+        req.user!,
+      ),
+      201,
+      'Product created successfully',
+    );
+  } catch (err) {
+    next(err);
   }
 };
 
-export const destroy = async (req: Request, res: Response) => {
+export const updateProduct = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const result = await service.delete(req.params.id);
-    res.json({ success: true, data: result });
-  } catch (err: any) {
-    res.status(404).json({ success: false, message: err.message });
+    const body = req.body as Record<string, unknown>;
+    success(
+      res,
+      await productService.update(
+        req.params.id,
+        {
+          name: typeof body.name === 'string' ? body.name : undefined,
+          description: typeof body.description === 'string' ? body.description : undefined,
+          price: body.price !== undefined ? numberFromBody(body.price) : undefined,
+          stock: body.stock !== undefined ? numberFromBody(body.stock) : undefined,
+          categoryId: typeof body.categoryId === 'string' ? body.categoryId : undefined,
+          image: typeof body.image === 'string' ? body.image : undefined,
+          sku: typeof body.sku === 'string' ? body.sku : undefined,
+          status: typeof body.status === 'boolean' ? body.status : undefined,
+        },
+        req.user!,
+      ),
+      200,
+      'Product updated successfully',
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteProduct = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    await productService.delete(req.params.id, req.user!);
+    noContent(res);
+  } catch (err) {
+    next(err);
   }
 };

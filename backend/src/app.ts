@@ -1,20 +1,21 @@
-﻿import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import routes from './routes/index.js';
+import { errorMiddleware } from './core/middlewares/error.middleware.js';
+import { NotFoundError } from './core/errors/not-found.error.js';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
+app.get('/', (req,res) =>{
+    res.send('Welcome to buynow website.')
+})
+
 app.use('/api', routes);
 
-app.get('/', (_req, res) => res.json({ message: 'BuyNow API' }));
-
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  const statusCode = (err as any).statusCode || 500;
-  const message = err.message || 'Internal server error';
-  res.status(statusCode).json({ success: false, message });
-});
+app.use((_req, _res, next) => next(new NotFoundError('Route not found')));
+app.use(errorMiddleware);
 
 export default app;

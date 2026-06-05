@@ -1,7 +1,14 @@
-import { MigrationInterface, QueryRunner, Table } from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableColumn } from 'typeorm';
 
 export class CreateUsersTable1685020000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
+    if (await queryRunner.hasTable('users')) {
+      if (!(await queryRunner.hasColumn('users', 'updated_at'))) {
+        await queryRunner.addColumn('users', this.updatedAtColumn());
+      }
+      return;
+    }
+
     await queryRunner.createTable(
       new Table({
         name: 'users',
@@ -58,6 +65,7 @@ export class CreateUsersTable1685020000000 implements MigrationInterface {
             type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
           },
+          this.updatedAtColumn(),
         ],
       }),
       true,
@@ -65,6 +73,17 @@ export class CreateUsersTable1685020000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('users');
+    if (await queryRunner.hasTable('users')) {
+      await queryRunner.dropTable('users', true);
+    }
+  }
+
+  private updatedAtColumn() {
+    return new TableColumn({
+      name: 'updated_at',
+      type: 'timestamp',
+      default: 'CURRENT_TIMESTAMP',
+      onUpdate: 'CURRENT_TIMESTAMP',
+    });
   }
 }

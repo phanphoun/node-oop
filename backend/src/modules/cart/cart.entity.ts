@@ -3,52 +3,35 @@ import {
   PrimaryColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   JoinColumn,
+  Index,
+  type Relation,
 } from 'typeorm';
 import { User } from '../auth/user.entity.js';
-import { Product } from '../product/product.entity.js';
+import { CartItem } from './cart-item.entity.js';
 
 @Entity('carts')
 export class Cart {
   @PrimaryColumn({ type: 'varchar', length: 36 })
   id!: string;
 
-  @Column({ name: 'buyer_id', type: 'varchar', length: 36, unique: true })
+  @Index('idx_carts_buyer_id')
+  @Column({ name: 'buyer_id', type: 'varchar', length: 36 })
   buyerId!: string;
 
-  @OneToOne(() => User)
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'buyer_id' })
-  buyer!: User;
+  buyer!: Relation<User>;
+
+  @OneToMany(() => CartItem, (item) => item.cart)
+  items!: Relation<CartItem[]>;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @OneToMany(() => CartItem, (item) => item.cart, { cascade: true })
-  items!: CartItem[];
-}
-
-@Entity('cart_items')
-export class CartItem {
-  @PrimaryColumn({ type: 'varchar', length: 36 })
-  id!: string;
-
-  @Column({ name: 'cart_id', type: 'varchar', length: 36 })
-  cartId!: string;
-
-  @ManyToOne(() => Cart, (cart) => cart.items, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'cart_id' })
-  cart!: Cart;
-
-  @Column({ name: 'product_id', type: 'varchar', length: 36 })
-  productId!: string;
-
-  @ManyToOne(() => Product)
-  @JoinColumn({ name: 'product_id' })
-  product!: Product;
-
-  @Column({ type: 'int' })
-  quantity!: number;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
 }
