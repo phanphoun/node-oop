@@ -1,4 +1,3 @@
-
 import {
   Entity,
   PrimaryColumn,
@@ -30,11 +29,18 @@ export class Product {
   @Column({ type: 'boolean', default: true })
   status!: boolean;
 
+  @Column({ name: 'category_id', type: 'varchar', length: 36, nullable: true })
+  categoryId!: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  image!: string | null;
+
+  @Column({ name: 'seller_id', type: 'varchar', length: 36, nullable: true })
+  sellerId!: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 }
-
-

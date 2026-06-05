@@ -22,6 +22,9 @@ export class ProductService {
     sku?: string;
     stock?: number;
     status?: boolean;
+    categoryId?: string;
+    image?: string;
+    sellerId?: string;
   }) {
     if (data.sku) {
       const existing = await this.repo.findOneBy({ sku: data.sku });
@@ -36,6 +39,9 @@ export class ProductService {
       sku: data.sku ?? null,
       stock: data.stock ?? 0,
       status: data.status ?? true,
+      categoryId: data.categoryId ?? null,
+      image: data.image ?? null,
+      sellerId: data.sellerId ?? null,
     });
 
     return this.repo.save(product);
@@ -50,6 +56,9 @@ export class ProductService {
       sku?: string;
       stock?: number;
       status?: boolean;
+      categoryId?: string;
+      image?: string;
+      sellerId?: string;
     }
   ) {
     const product = await this.findById(id);
@@ -65,6 +74,9 @@ export class ProductService {
     if (data.sku !== undefined) product.sku = data.sku;
     if (data.stock !== undefined) product.stock = data.stock;
     if (data.status !== undefined) product.status = data.status;
+    if (data.categoryId !== undefined) product.categoryId = data.categoryId;
+    if (data.image !== undefined) product.image = data.image;
+    if (data.sellerId !== undefined) product.sellerId = data.sellerId;
 
     return this.repo.save(product);
   }
