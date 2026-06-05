@@ -31,21 +31,27 @@ export class CreateProductsTable1685020000001 implements MigrationInterface {
             default: '0.00',
           },
           {
-            name: 'sku',
-            type: 'varchar',
-            length: '100',
-            isUnique: true,
-            isNullable: true,
-          },
-          {
             name: 'stock',
             type: 'int',
             default: 0,
           },
           {
-            name: 'status',
-            type: 'boolean',
-            default: true,
+            name: 'category_id',
+            type: 'varchar',
+            length: '36',
+            isNullable: true,
+          },
+          {
+            name: 'image',
+            type: 'varchar',
+            length: '255',
+            isNullable: true,
+          },
+          {
+            name: 'seller_id',
+            type: 'varchar',
+            length: '36',
+            isNullable: true,
           },
           {
             name: 'created_at',

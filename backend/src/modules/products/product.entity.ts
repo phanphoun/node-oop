@@ -1,37 +1,26 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from "typeorm";
+import { Entity, Column } from 'typeorm';
+import { BaseEntity } from '../../shared/base/base.entity.ts';
 
-@Entity("products")
-export class Product {
-  @PrimaryGeneratedColumn()
-  id!: number;
-
-  @Column()
+@Entity('products')
+export class Product extends BaseEntity {
+  @Column({ length: 255 })
   name!: string;
 
-  @Column("text")
+  @Column('text', { nullable: true })
   description!: string;
 
-  @Column("decimal")
+  @Column('decimal', { precision: 10, scale: 2, default: 0.00 })
   price!: number;
 
-  @Column()
-  sku!: string;
-
-  @Column()
+  @Column('int', { default: 0 })
   stock!: number;
 
-  @Column()
-  status!: string;
+  @Column({ nullable: true })
+  category_id!: string;
 
-  @CreateDateColumn()
-  created_at!: Date;
+  @Column({ nullable: true })
+  image!: string;
 
-  @UpdateDateColumn()
-  updated_at!: Date;
+  @Column({ nullable: true })
+  seller_id!: string;
 }
