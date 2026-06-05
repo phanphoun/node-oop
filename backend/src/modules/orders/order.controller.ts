@@ -11,6 +11,7 @@ export const store = async (req: Request, res: Response) => {
       res.status(400).json({ success: false, message: 'buyerId is required' });
       return;
     }
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       res.status(400).json({ success: false, message: 'Order must have at least one item' });
       return;
@@ -21,7 +22,7 @@ export const store = async (req: Request, res: Response) => {
         return;
       }
     }
-
+    
     const order = await service.create({ buyerId, items });
     res.status(201).json({ success: true, data: order });
   } catch (err: any) {
