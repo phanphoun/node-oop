@@ -1,26 +1,30 @@
-# BuyNow API Postman Testing Guide
+# BuyNow API Direct Postman Testing Runbook
 
-This guide documents the BuyNow backend API for manual testing with Postman. All API routes are mounted under `/api`, and the default local base URL is:
+This document is for testing the existing BuyNow backend API directly in Postman. You are not creating a new API. You are sending HTTP requests to the backend that already exists in this project.
+
+Default local server:
 
 ```text
 http://localhost:4000
 ```
 
-The root health check is:
-
-```http
-GET {{baseUrl}}/
-```
-
-Expected body:
+All backend API routes start with:
 
 ```text
-Welcome to buynow website.
+/api
 ```
 
-## 1. Start The API
+Example:
 
-From `backend/`:
+```http
+GET http://localhost:4000/api/products
+```
+
+You can use the Postman variables shown in this guide, or you can replace every variable manually with real values from your database and response bodies.
+
+## 1. Before Testing
+
+Start the backend from the `backend/` folder:
 
 ```bash
 npm install
@@ -28,103 +32,100 @@ npm run db:migrate:run
 npm run dev
 ```
 
-Make sure `.env` has database settings, `JWT_SECRET`, `PORT=4000`, and optional PayPal credentials.
+The API uses the `PORT` from `backend/.env`. If your `.env` has `PORT=4000`, use:
 
-If `PAYPAL_CLIENT_ID` or `PAYPAL_CLIENT_SECRET` is empty, PayPal payment testing uses a simulated completed PayPal response.
+```text
+http://localhost:4000
+```
 
-## 2. Create A Postman Environment
+Quick server check:
 
-Create a Postman environment named `BuyNow Local` with these variables:
+```http
+GET http://localhost:4000/
+```
 
-| Variable | Initial value |
+Expected response:
+
+```text
+Welcome to buynow website.
+```
+
+## 2. Postman Setup
+
+You can test with plain URLs, but using an environment makes the test run much easier.
+
+Create a Postman environment named:
+
+```text
+BuyNow Local
+```
+
+Add these variables:
+
+| Variable | Value |
 |---|---|
 | `baseUrl` | `http://localhost:4000` |
 | `testPassword` | `secret1` |
-| `adminEmail` | blank |
-| `buyerEmail` | blank |
-| `sellerEmail` | blank |
-| `adminToken` | blank |
-| `buyerToken` | blank |
-| `sellerToken` | blank |
-| `adminId` | blank |
-| `buyerId` | blank |
-| `sellerId` | blank |
-| `categoryId` | blank |
-| `productId` | blank |
-| `cartItemId` | blank |
-| `favoriteId` | blank |
-| `orderId` | blank |
-| `paymentId` | blank |
-| `notificationId` | blank |
-| `productSku` | blank |
-| `runId` | blank |
+| `adminEmail` | `admin.postman@example.com` |
+| `buyerEmail` | `buyer.postman@example.com` |
+| `sellerEmail` | `seller.postman@example.com` |
+| `adminToken` | empty |
+| `buyerToken` | empty |
+| `sellerToken` | empty |
+| `adminId` | empty |
+| `buyerId` | empty |
+| `sellerId` | empty |
+| `categoryId` | empty |
+| `productId` | empty |
+| `cartItemId` | empty |
+| `favoriteId` | empty |
+| `orderId` | empty |
+| `paymentId` | empty |
+| `notificationId` | empty |
+| `productSku` | `POSTMAN-001` |
 
-Optional collection-level pre-request script:
+If you get duplicate email or duplicate SKU errors, change the email values and `productSku` to new unique values.
 
-```javascript
-if (!pm.environment.get('runId')) {
-  const runId = String(Date.now());
+For example:
 
-  pm.environment.set('runId', runId);
-  pm.environment.set('testPassword', 'secret1');
-  pm.environment.set('adminEmail', `admin.${runId}@example.com`);
-  pm.environment.set('buyerEmail', `buyer.${runId}@example.com`);
-  pm.environment.set('sellerEmail', `seller.${runId}@example.com`);
-  pm.environment.set('productSku', `POSTMAN-${runId}`);
-}
+```text
+buyer.20260605@example.com
+seller.20260605@example.com
+POSTMAN-20260605-001
 ```
 
-To start a clean run, clear `runId` and the generated email/SKU variables.
+## 3. Postman Request Rules
 
-## 3. Common Headers And Auth
+For requests with a JSON body:
 
-For JSON requests:
+1. Open `Body`.
+2. Select `raw`.
+3. Select `JSON`.
+4. Paste the JSON body from this guide.
 
-```http
-Content-Type: application/json
-```
+For protected routes:
 
-Protected endpoints require:
+1. Open `Authorization`.
+2. Type: `Bearer Token`.
+3. Token: use the correct token variable, such as `{{buyerToken}}`.
+
+You can also add this header manually:
 
 ```http
 Authorization: Bearer {{buyerToken}}
 ```
 
-Use these tokens by folder:
+Use these tokens:
 
-| Folder | Bearer token |
+| User type | Token |
 |---|---|
 | Admin | `{{adminToken}}` |
-| Seller | `{{sellerToken}}` |
+| Seller / BusinessOwner | `{{sellerToken}}` |
 | Buyer | `{{buyerToken}}` |
-| Public | no auth |
 
-Supported roles:
+## 4. Response Format
 
-| Role | Purpose |
-|---|---|
-| `Admin` | Admin dashboard, category management, full product/order/payment visibility |
-| `BusinessOwner` | Seller product, order, and payment workflows |
-| `Buyer` | Cart, favorites, reviews, checkout, and PayPal payment workflows |
-
-Important: the public register endpoint allows `Buyer` and `BusinessOwner`, but it does not allow `Admin`. For local admin testing, create a test user first, then promote it in the local database.
-
-Example local admin setup:
-
-1. Register a user with `{{adminEmail}}`.
-2. Run this SQL in your local database:
-
-```sql
-UPDATE users
-SET role = 'Admin'
-WHERE email = 'admin.1234567890@example.com';
-```
-
-Use the actual `adminEmail` generated in Postman.
-
-## 4. Response Shapes
-
-Successful JSON responses:
+Most successful responses look like this:
 
 ```json
 {
@@ -134,125 +135,306 @@ Successful JSON responses:
 }
 ```
 
-Delete endpoints usually return `204 No Content` with an empty body.
+Create requests usually return:
 
-Error responses:
+```text
+201 Created
+```
+
+Read and update requests usually return:
+
+```text
+200 OK
+```
+
+Delete requests usually return:
+
+```text
+204 No Content
+```
+
+Errors look like this:
 
 ```json
 {
   "success": false,
-  "message": "Validation or authorization message"
+  "message": "Error message here"
 }
 ```
 
-Common status codes:
+Common errors:
 
 | Status | Meaning |
 |---|---|
-| `200` | Request succeeded |
-| `201` | Resource created |
-| `204` | Resource deleted or disabled |
-| `400` | Invalid request body or query |
-| `401` | Missing or invalid bearer token |
-| `403` | Valid token but wrong role or ownership |
+| `400` | Bad body, invalid value, duplicate email/SKU, empty cart, invalid quantity |
+| `401` | No token or invalid token |
+| `403` | Correct token but wrong role or wrong owner |
 | `404` | Resource not found |
-| `500` | Unexpected server error |
+| `500` | Server/database/unexpected error |
 
-## 5. Recommended Test Flow
+## 5. Very Important Role Notes
 
-Run these requests in order for a full Postman smoke test:
+The API has three roles:
 
-1. `GET /` to verify the server is running.
-2. Register admin candidate, promote it to `Admin` in the database, then login and save `adminToken`.
-3. Create a seller with admin credentials, then login as the seller and save `sellerToken`.
-4. Register/login a buyer and save `buyerToken`.
-5. Create a category as admin and save `categoryId`.
-6. Create a product as seller or admin and save `productId`.
-7. List/search products and get the product by ID.
-8. Add product to buyer cart and save `cartItemId`.
-9. Checkout as buyer and save `orderId`.
-10. Pay with PayPal as buyer and save `paymentId`.
-11. Create/read reviews, favorites, and notifications.
-12. Test role restrictions by calling an admin route with `buyerToken` and expecting `403`.
+| Role | String value |
+|---|---|
+| Admin | `Admin` |
+| Seller | `BusinessOwner` |
+| Buyer | `Buyer` |
 
-## 6. Useful Postman Tests Scripts
+The public register API can create:
 
-Basic success assertion for JSON endpoints:
+| Can register directly? | Role |
+|---|---|
+| yes | `Buyer` |
+| yes | `BusinessOwner` |
+| no | `Admin` |
 
-```javascript
-pm.test('response is success', function () {
-  pm.expect(pm.response.code).to.be.oneOf([200, 201]);
-  pm.expect(pm.response.json().success).to.eql(true);
-});
+Because public registration does not allow `Admin`, you need one admin account before testing admin routes.
+
+Use one of these options:
+
+| Option | What to do |
+|---|---|
+| Existing admin | Login with an admin user already in your database |
+| Local database update | Register a normal user, then update its role to `Admin` in MySQL |
+
+Example SQL after registering an admin test user:
+
+```sql
+UPDATE users
+SET role = 'Admin'
+WHERE email = 'admin.postman@example.com';
 ```
 
-Save a login/register token:
+Then login again with that email. The new token will contain the `Admin` role.
+
+## 6. Full Direct Testing Order
+
+Use this order when testing from an empty or fresh database:
+
+1. Test server root.
+2. Register admin candidate.
+3. Promote admin candidate to `Admin` in database.
+4. Login admin and save `adminToken`.
+5. Create seller with admin endpoint and save `sellerId`.
+6. Login seller and save `sellerToken`.
+7. Register buyer and save `buyerToken`.
+8. Create category and save `categoryId`.
+9. Create product and save `productId`.
+10. Add product to buyer cart and save `cartItemId`.
+11. Checkout and save `orderId`.
+12. Pay with PayPal and save `paymentId`.
+13. Test favorites, reviews, notifications, orders, payments, admin lists, and seller lists.
+
+This order matters because many routes need IDs created by previous routes.
+
+## 7. How To Save Values Manually
+
+After you send a request, copy IDs/tokens from the response body into Postman environment variables.
+
+Example login response:
+
+```json
+{
+  "success": true,
+  "message": "User logged in successfully",
+  "data": {
+    "user": {
+      "id": "buyer-user-id",
+      "role": "Buyer"
+    },
+    "token": "jwt-token-here"
+  }
+}
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.user.id` | `buyerId` |
+| `data.token` | `buyerToken` |
+
+Example product create response:
+
+```json
+{
+  "success": true,
+  "message": "Product created successfully",
+  "data": {
+    "id": "product-id-here"
+  }
+}
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.id` | `productId` |
+
+## 8. Optional Postman Test Scripts
+
+You do not need scripts. You can copy values manually. Scripts only make testing faster.
+
+Save buyer token after buyer register/login:
 
 ```javascript
 const data = pm.response.json().data;
-
-pm.environment.set('buyerToken', data.token);
 pm.environment.set('buyerId', data.user.id);
+pm.environment.set('buyerToken', data.token);
 ```
 
-Change `buyerToken` and `buyerId` to `adminToken`/`adminId` or `sellerToken`/`sellerId` when saving those users.
+Save admin token:
 
-Save an ID from a created resource:
+```javascript
+const data = pm.response.json().data;
+pm.environment.set('adminId', data.user.id);
+pm.environment.set('adminToken', data.token);
+```
+
+Save seller token:
+
+```javascript
+const data = pm.response.json().data;
+pm.environment.set('sellerId', data.user.id);
+pm.environment.set('sellerToken', data.token);
+```
+
+Save created resource ID:
 
 ```javascript
 pm.environment.set('categoryId', pm.response.json().data.id);
 ```
 
-Save a product ID from either a create response or list response:
+Change `categoryId` to `productId`, `favoriteId`, `orderId`, or `notificationId` depending on the request.
 
-```javascript
-const data = pm.response.json().data;
-const product = data.id ? data : data.items?.[0];
-
-if (product?.id) {
-  pm.environment.set('productId', product.id);
-}
-```
-
-Save the first cart item ID:
+Save first cart item ID:
 
 ```javascript
 const items = pm.response.json().data.items || [];
-
-if (items[0]?.id) {
-  pm.environment.set('cartItemId', items[0].id);
-}
+pm.environment.set('cartItemId', items[0].id);
 ```
 
-Save an order ID from checkout:
-
-```javascript
-pm.environment.set('orderId', pm.response.json().data.id);
-```
-
-Save a PayPal payment ID:
+Save PayPal payment ID:
 
 ```javascript
 pm.environment.set('paymentId', pm.response.json().data.payment.id);
 ```
 
-## 7. Auth Endpoints
+## 9. Auth Testing
 
-Base path: `/api/auth`
+Base path:
 
-| Request | Auth | Expected |
-|---|---|---|
-| `POST /register` | none | `201` |
-| `POST /login` | none | `200` |
-| `POST /logout` | any authenticated user | `200` |
-| `GET /profile` | any authenticated user | `200` |
-| `PUT /profile` | any authenticated user | `200` |
+```text
+{{baseUrl}}/api/auth
+```
 
-Register buyer:
+### 9.1 Register Admin Candidate
+
+This creates a normal user first. After this request, update the database role to `Admin`, then login.
 
 ```http
 POST {{baseUrl}}/api/auth/register
 ```
+
+Auth:
+
+```text
+No Auth
+```
+
+Body:
+
+```json
+{
+  "name": "Postman Admin",
+  "email": "{{adminEmail}}",
+  "password": "{{testPassword}}",
+  "role": "Buyer",
+  "phone": "010000001",
+  "address": "Admin test address"
+}
+```
+
+Expected:
+
+```text
+201 Created
+```
+
+Expected response data:
+
+| Field | Notes |
+|---|---|
+| `data.user.id` | admin candidate user ID |
+| `data.user.role` | currently `Buyer` |
+| `data.token` | not admin yet, do not use for admin routes |
+
+Now promote this user in MySQL:
+
+```sql
+UPDATE users
+SET role = 'Admin'
+WHERE email = 'admin.postman@example.com';
+```
+
+If you used a different `adminEmail`, use that email in the SQL.
+
+### 9.2 Login Admin
+
+```http
+POST {{baseUrl}}/api/auth/login
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Body:
+
+```json
+{
+  "email": "{{adminEmail}}",
+  "password": "{{testPassword}}"
+}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.user.id` | `adminId` |
+| `data.token` | `adminToken` |
+
+Confirm:
+
+```text
+data.user.role should be Admin
+```
+
+### 9.3 Register Buyer
+
+```http
+POST {{baseUrl}}/api/auth/register
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Body:
 
 ```json
 {
@@ -260,27 +442,39 @@ POST {{baseUrl}}/api/auth/register
   "email": "{{buyerEmail}}",
   "password": "{{testPassword}}",
   "role": "Buyer",
-  "phone": "012345678",
-  "address": "Phnom Penh"
+  "phone": "010000002",
+  "address": "Buyer test address"
 }
 ```
 
-Register seller directly:
+Expected:
 
-```json
-{
-  "name": "Postman Seller",
-  "email": "{{sellerEmail}}",
-  "password": "{{testPassword}}",
-  "role": "BusinessOwner"
-}
+```text
+201 Created
 ```
 
-Login:
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.user.id` | `buyerId` |
+| `data.token` | `buyerToken` |
+
+### 9.4 Login Buyer
+
+Use this if you already registered the buyer or need a fresh token.
 
 ```http
 POST {{baseUrl}}/api/auth/login
 ```
+
+Auth:
+
+```text
+No Auth
+```
+
+Body:
 
 ```json
 {
@@ -289,106 +483,662 @@ POST {{baseUrl}}/api/auth/login
 }
 ```
 
-Update profile:
+Expected:
+
+```text
+200 OK
+```
+
+Save `data.token` as `buyerToken`.
+
+### 9.5 Register Seller Directly
+
+You can create a seller directly with public registration. You can also create a seller through the admin endpoint later.
+
+Use only one seller creation method with the same `sellerEmail`:
+
+| If you want to test | Do this |
+|---|---|
+| Public seller registration | Run this section |
+| Admin-created business owner | Skip this section and use section 10.2 |
+
+For a full admin test, skip this section and create the seller through the admin endpoint.
 
 ```http
-PUT {{baseUrl}}/api/auth/profile
-Authorization: Bearer {{buyerToken}}
+POST {{baseUrl}}/api/auth/register
 ```
+
+Auth:
+
+```text
+No Auth
+```
+
+Body:
 
 ```json
 {
-  "name": "Updated Buyer",
-  "phone": "098765432",
-  "address": "Updated address"
+  "name": "Postman Seller Direct",
+  "email": "{{sellerEmail}}",
+  "password": "{{testPassword}}",
+  "role": "BusinessOwner",
+  "phone": "010000003",
+  "address": "Seller test address"
 }
 ```
 
-## 8. Admin Endpoints
+Expected:
 
-Base path: `/api/admin`
-
-All admin endpoints require:
-
-```http
-Authorization: Bearer {{adminToken}}
+```text
+201 Created
 ```
 
-| Request | Query/body notes | Expected |
-|---|---|---|
-| `GET /users` | `page`, `limit` | `200` |
-| `POST /business-owner` | create seller account | `201` |
-| `PUT /business-owner/:id` | update seller account | `200` |
-| `DELETE /business-owner/:id` | disables seller account | `204` |
-| `GET /products` | `page`, `limit`, product filters | `200` |
-| `DELETE /products/:id` | disables product | `204` |
-| `GET /orders` | `page`, `limit` | `200` |
-| `GET /notifications` | none | `200` |
-| `GET /analytics` | none | `200` |
+Save:
 
-Create business owner:
+| Response field | Save as |
+|---|---|
+| `data.user.id` | `sellerId` |
+| `data.token` | `sellerToken` |
+
+### 9.6 Login Seller
+
+```http
+POST {{baseUrl}}/api/auth/login
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Body:
+
+```json
+{
+  "email": "{{sellerEmail}}",
+  "password": "{{testPassword}}"
+}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.user.id` | `sellerId` |
+| `data.token` | `sellerToken` |
+
+### 9.7 Get Current Profile
+
+```http
+GET {{baseUrl}}/api/auth/profile
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected data:
+
+| Field | Notes |
+|---|---|
+| `data.id` | current user ID |
+| `data.email` | current user email |
+| `data.role` | `Buyer`, `BusinessOwner`, or `Admin` |
+
+### 9.8 Update Current Profile
+
+```http
+PUT {{baseUrl}}/api/auth/profile
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
+
+```json
+{
+  "name": "Postman Buyer Updated",
+  "phone": "099999999",
+  "address": "Updated buyer address"
+}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected message:
+
+```text
+Profile updated successfully
+```
+
+### 9.9 Logout
+
+```http
+POST {{baseUrl}}/api/auth/logout
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
+
+```text
+No body
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Note: this API does not blacklist JWT tokens. Logout only returns a success response.
+
+## 10. Admin Testing
+
+Base path:
+
+```text
+{{baseUrl}}/api/admin
+```
+
+All requests in this section require:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+If you use `buyerToken` or `sellerToken`, admin routes should return:
+
+```text
+403 Forbidden
+```
+
+### 10.1 List Users
+
+```http
+GET {{baseUrl}}/api/admin/users?page=1&limit=20
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected data:
+
+| Field | Notes |
+|---|---|
+| `data.items` | array of users |
+| `data.meta.page` | current page |
+| `data.meta.limit` | page size |
+| `data.meta.total` | total users |
+
+### 10.2 Create Business Owner
+
+Use this route if you want admin to create the seller. If you already registered seller directly, you can skip this.
 
 ```http
 POST {{baseUrl}}/api/admin/business-owner
 ```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Body:
 
 ```json
 {
   "name": "Postman Seller",
   "email": "{{sellerEmail}}",
   "password": "{{testPassword}}",
-  "phone": "010000000",
-  "address": "Seller address"
+  "phone": "010000003",
+  "address": "Seller created by admin"
 }
 ```
 
-Save `data.id` as `sellerId`, then login through `/api/auth/login` using `sellerEmail` to get `sellerToken`.
+Expected:
 
-Update business owner:
+```text
+201 Created
+```
+
+Expected message:
+
+```text
+Business owner created successfully
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.id` | `sellerId` |
+
+After this, login seller through `/api/auth/login` and save `sellerToken`.
+
+### 10.3 Update Business Owner
 
 ```http
 PUT {{baseUrl}}/api/admin/business-owner/{{sellerId}}
 ```
 
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Body:
+
 ```json
 {
-  "name": "Updated Seller",
+  "name": "Postman Seller Updated",
   "phone": "011111111",
   "address": "Updated seller address",
   "status": true
 }
 ```
 
-## 9. Seller Endpoints
+Expected:
 
-Base path: `/api/seller`
-
-All seller endpoints require:
-
-```http
-Authorization: Bearer {{sellerToken}}
+```text
+200 OK
 ```
 
-| Request | Query/body notes | Expected |
-|---|---|---|
-| `GET /products` | `page`, `limit`, product filters | `200` |
-| `POST /products` | create product owned by seller | `201` |
-| `PUT /products/:id` | update own product | `200` |
-| `DELETE /products/:id` | disables own product | `204` |
-| `GET /orders` | seller orders only | `200` |
-| `GET /payments` | seller payments only | `200` |
-| `PUT /profile` | seller profile fields | `200` |
+Expected message:
 
-Create seller product:
+```text
+Business owner updated successfully
+```
+
+### 10.4 Delete Business Owner
+
+Only run this near the end, because it disables the seller account.
+
+```http
+DELETE {{baseUrl}}/api/admin/business-owner/{{sellerId}}
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Expected:
+
+```text
+204 No Content
+```
+
+Important: the service sets the seller `status` to `false`; it does not physically delete the user row.
+
+### 10.5 List All Products As Admin
+
+```http
+GET {{baseUrl}}/api/admin/products?page=1&limit=20
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Notes:
+
+| Behavior | Details |
+|---|---|
+| Includes inactive products | yes |
+| Supports pagination | `page`, `limit` |
+| Supports product filters | same filters as public product list |
+
+### 10.6 Delete Product As Admin
+
+Only run this near the end, because it disables the product.
+
+```http
+DELETE {{baseUrl}}/api/admin/products/{{productId}}
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Expected:
+
+```text
+204 No Content
+```
+
+Important: the product is soft-disabled by setting `status` to `false`.
+
+### 10.7 List All Orders As Admin
+
+```http
+GET {{baseUrl}}/api/admin/orders?page=1&limit=20
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected data:
+
+| Field | Notes |
+|---|---|
+| `data.items` | array of orders |
+| `data.items[].buyer` | buyer relation |
+| `data.items[].items` | ordered products |
+| `data.meta` | pagination |
+
+### 10.8 List All Notifications As Admin
+
+```http
+GET {{baseUrl}}/api/admin/notifications
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+### 10.9 Admin Analytics
+
+```http
+GET {{baseUrl}}/api/admin/analytics
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected data fields:
+
+| Field | Meaning |
+|---|---|
+| `users` | total users |
+| `sellers` | total business owners |
+| `buyers` | total buyers |
+| `products` | total products |
+| `orders` | total orders |
+| `payments` | total payments |
+| `revenue` | total paid payment amount |
+
+## 11. Category Testing
+
+Base path:
+
+```text
+{{baseUrl}}/api/categories
+```
+
+Public routes:
+
+| Route | Auth |
+|---|---|
+| `GET /api/categories` | none |
+| `GET /api/categories/:id` | none |
+
+Admin-only routes:
+
+| Route | Auth |
+|---|---|
+| `POST /api/categories` | admin |
+| `PUT /api/categories/:id` | admin |
+| `DELETE /api/categories/:id` | admin |
+
+### 11.1 Create Category
+
+```http
+POST {{baseUrl}}/api/categories
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Body:
+
+```json
+{
+  "name": "Postman Electronics",
+  "description": "Devices and accessories created during Postman testing"
+}
+```
+
+Expected:
+
+```text
+201 Created
+```
+
+Expected message:
+
+```text
+Category created successfully
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.id` | `categoryId` |
+
+If you get:
+
+```text
+Category already exists
+```
+
+Change the category name and send again.
+
+### 11.2 List Categories
+
+```http
+GET {{baseUrl}}/api/categories
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected data:
+
+```text
+data is an array of categories
+```
+
+### 11.3 Get Category By ID
+
+```http
+GET {{baseUrl}}/api/categories/{{categoryId}}
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+### 11.4 Update Category
+
+```http
+PUT {{baseUrl}}/api/categories/{{categoryId}}
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Body:
+
+```json
+{
+  "name": "Postman Electronics Updated",
+  "description": "Updated during Postman testing"
+}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected message:
+
+```text
+Category updated successfully
+```
+
+### 11.5 Delete Category
+
+Only run this after all product tests that use the category.
+
+```http
+DELETE {{baseUrl}}/api/categories/{{categoryId}}
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Expected:
+
+```text
+204 No Content
+```
+
+## 12. Product Testing
+
+Base path:
+
+```text
+{{baseUrl}}/api/products
+```
+
+Public product routes do not need a token. Create/update/delete need admin or seller token.
+
+### Product Query Parameters
+
+Use these with `GET /api/products` or `GET /api/products/search`:
+
+| Query | Example | Meaning |
+|---|---|---|
+| `page` | `1` | page number |
+| `limit` | `20` | page size, max 100 |
+| `search` | `headphones` | searches name and description |
+| `category` | `{{categoryId}}` | category ID or category name |
+| `minPrice` | `10` | minimum price |
+| `maxPrice` | `100` | maximum price |
+| `sort` | `price_asc` | sort by price ascending |
+| `sort` | `price_desc` | sort by price descending |
+| `sort` | `name` | sort by product name |
+| `sellerId` | `{{sellerId}}` | products by seller |
+
+### 12.1 Create Product As Seller
+
+Recommended for normal seller testing.
 
 ```http
 POST {{baseUrl}}/api/seller/products
 ```
 
+Auth:
+
+```text
+Bearer Token: {{sellerToken}}
+```
+
+Body:
+
 ```json
 {
-  "name": "Postman Headphones",
-  "description": "Wireless headphones created from Postman",
+  "name": "Postman Wireless Headphones",
+  "description": "Wireless headphones created directly from Postman",
   "price": 49.99,
   "stock": 25,
   "categoryId": "{{categoryId}}",
@@ -397,94 +1147,46 @@ POST {{baseUrl}}/api/seller/products
 }
 ```
 
-Update seller product:
+Expected:
 
-```http
-PUT {{baseUrl}}/api/seller/products/{{productId}}
+```text
+201 Created
 ```
 
-```json
-{
-  "price": 44.99,
-  "stock": 20,
-  "status": true
-}
+Expected message:
+
+```text
+Product created successfully
 ```
 
-## 10. Category Endpoints
+Save:
 
-Base path: `/api/categories`
-
-| Request | Auth | Expected |
-|---|---|---|
-| `GET /` | none | `200` |
-| `GET /:id` | none | `200` |
-| `POST /` | admin | `201` |
-| `PUT /:id` | admin | `200` |
-| `DELETE /:id` | admin | `204` |
-
-Create category:
-
-```http
-POST {{baseUrl}}/api/categories
-Authorization: Bearer {{adminToken}}
-```
-
-```json
-{
-  "name": "Postman Electronics",
-  "description": "Devices and accessories"
-}
-```
-
-Update category:
-
-```json
-{
-  "name": "Postman Electronics Updated",
-  "description": "Updated category description"
-}
-```
-
-## 11. Product Endpoints
-
-Base path: `/api/products`
-
-| Request | Auth | Expected |
-|---|---|---|
-| `GET /` | none | `200` |
-| `GET /search?search=phone` | none | `200` |
-| `GET /top-rated?limit=10` | none | `200` |
-| `GET /category/:category` | none | `200` |
-| `GET /:id` | none | `200` |
-| `POST /` | admin or seller | `201` |
-| `PUT /:id` | admin or owning seller | `200` |
-| `DELETE /:id` | admin or owning seller | `204` |
-
-Supported list query parameters:
-
-| Query | Example |
+| Response field | Save as |
 |---|---|
-| `page` | `1` |
-| `limit` | `20` |
-| `search` | `headphones` |
-| `category` | category name or category ID |
-| `minPrice` | `10` |
-| `maxPrice` | `100` |
-| `sort` | `price_asc`, `price_desc`, or `name` |
-| `sellerId` | seller user ID |
+| `data.id` | `productId` |
 
-Create product as admin:
+If you get duplicate SKU, change `productSku`.
+
+### 12.2 Create Product As Admin
+
+Use this if you want admin to create a product for a seller.
 
 ```http
 POST {{baseUrl}}/api/products
-Authorization: Bearer {{adminToken}}
 ```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Body:
 
 ```json
 {
-  "name": "Admin Postman Product",
-  "description": "Product created by admin",
+  "name": "Admin Created Postman Product",
+  "description": "Product created by admin during Postman testing",
   "price": 29.99,
   "stock": 15,
   "categoryId": "{{categoryId}}",
@@ -494,40 +1196,389 @@ Authorization: Bearer {{adminToken}}
 }
 ```
 
-Search products:
+Expected:
 
-```http
-GET {{baseUrl}}/api/products?search=headphones&minPrice=10&maxPrice=100&sort=price_asc&page=1&limit=10
+```text
+201 Created
 ```
 
-Get top-rated products:
+Save `data.id` as `productId`.
+
+### 12.3 List Products
+
+```http
+GET {{baseUrl}}/api/products?page=1&limit=20
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected data:
+
+| Field | Notes |
+|---|---|
+| `data.items` | product array |
+| `data.meta.page` | page |
+| `data.meta.limit` | limit |
+| `data.meta.total` | total products |
+
+### 12.4 Search Products
+
+```http
+GET {{baseUrl}}/api/products/search?search=headphones&page=1&limit=10
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+### 12.5 Filter Products By Category
+
+By category ID:
+
+```http
+GET {{baseUrl}}/api/products/category/{{categoryId}}
+```
+
+By query parameter:
+
+```http
+GET {{baseUrl}}/api/products?category={{categoryId}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+### 12.6 Filter Products By Price
+
+```http
+GET {{baseUrl}}/api/products?minPrice=10&maxPrice=100&sort=price_asc
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+### 12.7 Get Top Rated Products
 
 ```http
 GET {{baseUrl}}/api/products/top-rated?limit=10
 ```
 
-## 12. Cart Endpoints
+Auth:
 
-Base path: `/api/cart`
-
-All cart endpoints require:
-
-```http
-Authorization: Bearer {{buyerToken}}
+```text
+No Auth
 ```
 
-| Request | Body notes | Expected |
-|---|---|---|
-| `GET /` | none | `200` |
-| `POST /` | `productId`, `quantity` | `201` |
-| `PUT /:id` | `quantity` | `200` |
-| `DELETE /:id` | none | `204` |
+Expected:
 
-Add product to cart:
+```text
+200 OK
+```
+
+Notes:
+
+| Rule | Details |
+|---|---|
+| default limit | `10` |
+| min limit | `1` |
+| max limit | `50` |
+
+### 12.8 Get Product By ID
+
+```http
+GET {{baseUrl}}/api/products/{{productId}}
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected related data may include:
+
+| Field | Notes |
+|---|---|
+| `data.category` | category object |
+| `data.seller` | seller object |
+| `data.reviews` | review array |
+
+### 12.9 Update Product As Seller
+
+Seller can update only their own product.
+
+```http
+PUT {{baseUrl}}/api/seller/products/{{productId}}
+```
+
+Auth:
+
+```text
+Bearer Token: {{sellerToken}}
+```
+
+Body:
+
+```json
+{
+  "name": "Postman Wireless Headphones Updated",
+  "description": "Updated directly from Postman",
+  "price": 44.99,
+  "stock": 20,
+  "categoryId": "{{categoryId}}",
+  "image": "https://example.com/headphones-updated.png",
+  "sku": "{{productSku}}",
+  "status": true
+}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected message:
+
+```text
+Product updated successfully
+```
+
+### 12.10 Update Product As Admin
+
+```http
+PUT {{baseUrl}}/api/products/{{productId}}
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Body:
+
+```json
+{
+  "price": 39.99,
+  "stock": 30,
+  "status": true
+}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+### 12.11 Delete Product
+
+Run this near the end because it disables the product and buyer cart/checkout tests need an active product.
+
+Seller route:
+
+```http
+DELETE {{baseUrl}}/api/seller/products/{{productId}}
+```
+
+Admin route:
+
+```http
+DELETE {{baseUrl}}/api/products/{{productId}}
+```
+
+Expected:
+
+```text
+204 No Content
+```
+
+## 13. Seller Testing
+
+Base path:
+
+```text
+{{baseUrl}}/api/seller
+```
+
+All seller routes require:
+
+```text
+Bearer Token: {{sellerToken}}
+```
+
+### 13.1 List Seller Products
+
+```http
+GET {{baseUrl}}/api/seller/products?page=1&limit=20
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+This lists products for the logged-in seller only and includes inactive products.
+
+### 13.2 List Seller Orders
+
+Run this after buyer checkout.
+
+```http
+GET {{baseUrl}}/api/seller/orders?page=1&limit=20
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected:
+
+```text
+data.items contains orders that include this seller's products
+```
+
+### 13.3 List Seller Payments
+
+Run this after buyer payment.
+
+```http
+GET {{baseUrl}}/api/seller/payments?page=1&limit=20
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+### 13.4 Update Seller Profile
+
+```http
+PUT {{baseUrl}}/api/seller/profile
+```
+
+Auth:
+
+```text
+Bearer Token: {{sellerToken}}
+```
+
+Body:
+
+```json
+{
+  "name": "Postman Seller Updated",
+  "phone": "012222222",
+  "address": "Updated seller profile address"
+}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected message:
+
+```text
+Seller profile updated successfully
+```
+
+## 14. Cart Testing
+
+Base path:
+
+```text
+{{baseUrl}}/api/cart
+```
+
+All cart routes require:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Cart routes only work for `Buyer` users.
+
+### 14.1 Get Buyer Cart
+
+```http
+GET {{baseUrl}}/api/cart
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+If the buyer has no cart yet, the API creates an empty cart.
+
+Expected data:
+
+| Field | Notes |
+|---|---|
+| `data.id` | cart ID |
+| `data.buyerId` | buyer user ID |
+| `data.items` | cart item array |
+
+### 14.2 Add Product To Cart
+
+Product must be active and have enough stock.
 
 ```http
 POST {{baseUrl}}/api/cart
 ```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
 
 ```json
 {
@@ -536,11 +1587,43 @@ POST {{baseUrl}}/api/cart
 }
 ```
 
-Update cart item:
+Expected:
+
+```text
+201 Created
+```
+
+Expected message:
+
+```text
+Product added to cart
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.items[0].id` | `cartItemId` |
+
+If the cart already has items, save the item where:
+
+```text
+data.items[].productId equals productId
+```
+
+### 14.3 Update Cart Item Quantity
 
 ```http
 PUT {{baseUrl}}/api/cart/{{cartItemId}}
 ```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
 
 ```json
 {
@@ -548,29 +1631,76 @@ PUT {{baseUrl}}/api/cart/{{cartItemId}}
 }
 ```
 
-Setting `quantity` to `0` removes the cart item.
+Expected:
 
-## 13. Favorite Endpoints
-
-Base path: `/api/favorites`
-
-All favorite endpoints require:
-
-```http
-Authorization: Bearer {{buyerToken}}
+```text
+200 OK
 ```
 
-| Request | Body notes | Expected |
-|---|---|---|
-| `GET /` | none | `200` |
-| `POST /` | `productId` | `201` |
-| `DELETE /:id` | favorite ID or product ID | `204` |
+Expected message:
 
-Add favorite:
+```text
+Cart updated successfully
+```
+
+Quantity rules:
+
+| Value | Behavior |
+|---|---|
+| `1` or more | updates quantity |
+| `0` | removes the cart item |
+| negative number | removes the cart item |
+| decimal or invalid value | treated like `0` by this controller and removes the cart item |
+
+For validation testing, use `POST /api/cart` with `quantity: 0`; that route returns `400`.
+
+### 14.4 Delete Cart Item
+
+Do this only if you are not about to checkout, or add the product again after deleting.
+
+```http
+DELETE {{baseUrl}}/api/cart/{{cartItemId}}
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+204 No Content
+```
+
+## 15. Favorite Testing
+
+Base path:
+
+```text
+{{baseUrl}}/api/favorites
+```
+
+All favorite routes require:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+### 15.1 Add Favorite
 
 ```http
 POST {{baseUrl}}/api/favorites
 ```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
 
 ```json
 {
@@ -578,72 +1708,396 @@ POST {{baseUrl}}/api/favorites
 }
 ```
 
-## 14. Review Endpoints
+Expected:
 
-Base path: `/api/reviews`
+```text
+201 Created
+```
 
-| Request | Auth | Expected |
-|---|---|---|
-| `GET /:productId` | none | `200` |
-| `POST /` | buyer | `201` |
+Expected message:
 
-Create or update review:
+```text
+Product added to favorites
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.id` | `favoriteId` |
+
+If you send the same product again, the API returns the existing favorite.
+
+### 15.2 List Favorites
+
+```http
+GET {{baseUrl}}/api/favorites
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected:
+
+```text
+data is an array of favorite records
+```
+
+### 15.3 Delete Favorite
+
+You can use either the favorite ID or product ID.
+
+By favorite ID:
+
+```http
+DELETE {{baseUrl}}/api/favorites/{{favoriteId}}
+```
+
+By product ID:
+
+```http
+DELETE {{baseUrl}}/api/favorites/{{productId}}
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+204 No Content
+```
+
+## 16. Review Testing
+
+Base path:
+
+```text
+{{baseUrl}}/api/reviews
+```
+
+### 16.1 List Product Reviews
+
+```http
+GET {{baseUrl}}/api/reviews/{{productId}}
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected data:
+
+| Field | Notes |
+|---|---|
+| `data.items` | review array |
+| `data.meta.count` | number of reviews |
+| `data.meta.averageRating` | average rating |
+
+### 16.2 Create Review
 
 ```http
 POST {{baseUrl}}/api/reviews
-Authorization: Bearer {{buyerToken}}
 ```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
 
 ```json
 {
   "productId": "{{productId}}",
   "rating": 5,
-  "comment": "Great product from Postman"
+  "comment": "Great product tested directly in Postman"
 }
+```
+
+Expected:
+
+```text
+201 Created
+```
+
+Expected message:
+
+```text
+Review saved successfully
 ```
 
 Rules:
 
-| Field | Rule |
+| Rule | Details |
 |---|---|
-| `rating` | integer from `1` to `5` |
-| `productId` | must be an active product |
-| buyer/product pair | one review per buyer per product; repeated requests update the existing review |
+| `rating` | must be whole number from `1` to `5` |
+| `productId` | must be active product |
+| one buyer/product review | sending again updates existing review |
 
-## 15. Order Endpoints
+### 16.3 Update Review
 
-Base path: `/api/orders`
+Send the same endpoint again with a different rating/comment:
 
-All order endpoints require authentication.
+```http
+POST {{baseUrl}}/api/reviews
+```
 
-| Request | Auth | Expected |
-|---|---|---|
-| `GET /` | admin, seller, or buyer | `200` |
-| `GET /:id` | admin, seller for own products, or owning buyer | `200` |
-| `PUT /:id/status` | admin or seller | `200` |
-| `POST /checkout` | buyer | `201` |
+Auth:
 
-There is also a buyer checkout alias:
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
+
+```json
+{
+  "productId": "{{productId}}",
+  "rating": 4,
+  "comment": "Updated review from Postman"
+}
+```
+
+Expected:
+
+```text
+201 Created
+```
+
+The existing review is updated.
+
+## 17. Order Testing
+
+Base path:
+
+```text
+{{baseUrl}}/api/orders
+```
+
+All order routes require authentication.
+
+Order visibility:
+
+| User | What they can see |
+|---|---|
+| Admin | all orders |
+| Seller | orders containing their products |
+| Buyer | their own orders |
+
+### 17.1 Checkout Buyer Cart
+
+Before this request:
+
+1. Product must exist.
+2. Product must be active.
+3. Product stock must be enough.
+4. Buyer cart must have at least one item.
+
+```http
+POST {{baseUrl}}/api/orders/checkout
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
+
+```text
+No body
+```
+
+Expected:
+
+```text
+201 Created
+```
+
+Expected message:
+
+```text
+Order created successfully
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.id` | `orderId` |
+
+Important behavior:
+
+| Behavior | Details |
+|---|---|
+| Creates order | yes |
+| Creates order items | yes |
+| Reduces product stock | yes |
+| Clears cart | yes |
+| Creates notification | yes |
+| Initial `paymentStatus` | `pending` |
+| Initial `orderStatus` | `pending` |
+
+### 17.2 Checkout Alias
+
+This route does the same checkout action:
 
 ```http
 POST {{baseUrl}}/api/checkout
-Authorization: Bearer {{buyerToken}}
 ```
 
-Checkout creates an order from the buyer cart and clears the cart. No body is required.
+Auth:
 
-Update order status:
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+201 Created
+```
+
+Do not run both checkout routes on the same cart unless you add items again. The first checkout clears the cart.
+
+### 17.3 List Orders As Buyer
+
+```http
+GET {{baseUrl}}/api/orders?page=1&limit=20
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected:
+
+```text
+data.items contains only this buyer's orders
+```
+
+### 17.4 List Orders As Seller
+
+```http
+GET {{baseUrl}}/api/orders?page=1&limit=20
+```
+
+Auth:
+
+```text
+Bearer Token: {{sellerToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected:
+
+```text
+data.items contains orders that include seller products
+```
+
+### 17.5 List Orders As Admin
+
+```http
+GET {{baseUrl}}/api/orders?page=1&limit=20
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+### 17.6 Get Order By ID
+
+Buyer:
+
+```http
+GET {{baseUrl}}/api/orders/{{orderId}}
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Seller can get the order only if it contains the seller's product.
+
+Admin can get any order.
+
+### 17.7 Update Order Status As Admin
 
 ```http
 PUT {{baseUrl}}/api/orders/{{orderId}}/status
-Authorization: Bearer {{adminToken}}
 ```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Body:
 
 ```json
 {
   "orderStatus": "confirmed",
   "paymentStatus": "paid"
 }
+```
+
+Expected:
+
+```text
+200 OK
 ```
 
 Valid `orderStatus` values:
@@ -665,26 +2119,77 @@ Valid `paymentStatus` values:
 | `failed` |
 | `refunded` |
 
-Sellers can update `orderStatus` only. Sellers cannot update `paymentStatus`.
+### 17.8 Update Order Status As Seller
 
-## 16. Payment Endpoints
+Seller can update `orderStatus`, but cannot update `paymentStatus`.
 
-Base path: `/api/payments`
+```http
+PUT {{baseUrl}}/api/orders/{{orderId}}/status
+```
 
-All payment endpoints require authentication.
+Auth:
 
-| Request | Auth | Expected |
-|---|---|---|
-| `GET /` | admin, seller, or buyer | `200` |
-| `GET /:id` | admin, seller for own orders, or owning buyer | `200` |
-| `POST /paypal` | buyer | `201` |
+```text
+Bearer Token: {{sellerToken}}
+```
 
-Pay with PayPal:
+Body:
+
+```json
+{
+  "orderStatus": "processing"
+}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+If seller sends `paymentStatus`, expected:
+
+```text
+403 Forbidden
+```
+
+## 18. Payment Testing
+
+Base path:
+
+```text
+{{baseUrl}}/api/payments
+```
+
+All payment routes require authentication.
+
+Payment visibility:
+
+| User | What they can see |
+|---|---|
+| Admin | all payments |
+| Seller | payments for orders containing their products |
+| Buyer | their own payments |
+
+### 18.1 Pay With PayPal
+
+Before this request:
+
+1. Buyer must have an order.
+2. `orderId` must belong to the buyer.
+3. Order must not already be paid.
 
 ```http
 POST {{baseUrl}}/api/payments/paypal
-Authorization: Bearer {{buyerToken}}
 ```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
 
 ```json
 {
@@ -692,134 +2197,590 @@ Authorization: Bearer {{buyerToken}}
 }
 ```
 
-Expected `data` shape:
+Expected:
+
+```text
+201 Created
+```
+
+Expected message:
+
+```text
+PayPal payment processed
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.payment.id` | `paymentId` |
+
+Expected simulated PayPal data if PayPal credentials are empty:
 
 ```json
 {
-  "payment": {
-    "id": "payment-id",
-    "orderId": "order-id",
-    "buyerId": "buyer-id",
-    "amount": 49.99,
-    "paymentMethod": "PayPal",
-    "paymentStatus": "paid",
-    "transactionId": "SIM-1234567890"
-  },
   "paypal": {
-    "id": "SIM-1234567890",
+    "id": "SIM-...",
     "status": "COMPLETED",
     "simulated": true
   }
 }
 ```
 
-## 17. Notification Endpoints
+Expected payment behavior:
 
-Base path: `/api/notifications`
+| Field | Expected |
+|---|---|
+| `data.payment.paymentMethod` | `PayPal` |
+| `data.payment.paymentStatus` | `paid` if simulated PayPal completed |
+| `data.payment.orderId` | same as `orderId` |
+| `data.payment.buyerId` | same as `buyerId` |
 
-| Request | Auth | Expected |
-|---|---|---|
-| `GET /` | any authenticated user | `200` |
-| `POST /` | admin | `201` |
-| `PUT /:id/read` | any authenticated user that can see notification | `200` |
+### 18.2 List Payments As Buyer
 
-Create notification:
+```http
+GET {{baseUrl}}/api/payments?page=1&limit=20
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected:
+
+```text
+data.items contains only buyer payments
+```
+
+### 18.3 List Payments As Seller
+
+```http
+GET {{baseUrl}}/api/payments?page=1&limit=20
+```
+
+Auth:
+
+```text
+Bearer Token: {{sellerToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+### 18.4 List Payments As Admin
+
+```http
+GET {{baseUrl}}/api/payments?page=1&limit=20
+```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+### 18.5 Get Payment By ID
+
+```http
+GET {{baseUrl}}/api/payments/{{paymentId}}
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Admin can get any payment. Seller can get the payment only if it belongs to an order containing the seller's product.
+
+## 19. Notification Testing
+
+Base path:
+
+```text
+{{baseUrl}}/api/notifications
+```
+
+### 19.1 Create Notification As Admin
+
+Create notification for a specific buyer:
 
 ```http
 POST {{baseUrl}}/api/notifications
-Authorization: Bearer {{adminToken}}
 ```
+
+Auth:
+
+```text
+Bearer Token: {{adminToken}}
+```
+
+Body:
 
 ```json
 {
   "userId": "{{buyerId}}",
   "type": "admin_alert",
   "title": "Postman Notice",
-  "message": "This notification was created from Postman."
+  "message": "This notification was created directly from Postman."
 }
 ```
 
-Use `null` or omit `userId` for a global notification.
+Expected:
 
-Mark notification as read:
+```text
+201 Created
+```
+
+Expected message:
+
+```text
+Notification created successfully
+```
+
+Save:
+
+| Response field | Save as |
+|---|---|
+| `data.id` | `notificationId` |
+
+Create global notification:
+
+```json
+{
+  "userId": null,
+  "type": "admin_alert",
+  "title": "Global Postman Notice",
+  "message": "All users can see this global notification."
+}
+```
+
+### 19.2 List My Notifications
+
+```http
+GET {{baseUrl}}/api/notifications
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected data:
+
+```text
+data is an array of notifications for this user plus global notifications
+```
+
+### 19.3 Mark Notification As Read
 
 ```http
 PUT {{baseUrl}}/api/notifications/{{notificationId}}/read
-Authorization: Bearer {{buyerToken}}
 ```
 
-## 18. Negative Test Cases
+Auth:
 
-Use these to verify auth and validation behavior:
+```text
+Bearer Token: {{buyerToken}}
+```
 
-| Case | Request | Expected |
+Body:
+
+```text
+No body
+```
+
+Expected:
+
+```text
+200 OK
+```
+
+Expected:
+
+```text
+data.isRead is true
+```
+
+If a user tries to mark another user's private notification, the API returns success with `data: null`.
+
+## 20. Negative Testing
+
+Use these tests to confirm auth and validation behavior.
+
+### 20.1 Missing Token
+
+```http
+GET {{baseUrl}}/api/cart
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Expected:
+
+```text
+401 Unauthorized
+```
+
+Expected message:
+
+```text
+Missing authorization token
+```
+
+### 20.2 Buyer Accessing Admin Route
+
+```http
+GET {{baseUrl}}/api/admin/users
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+403 Forbidden
+```
+
+Expected message:
+
+```text
+You do not have permission to access this resource
+```
+
+### 20.3 Wrong Login Password
+
+```http
+POST {{baseUrl}}/api/auth/login
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Body:
+
+```json
+{
+  "email": "{{buyerEmail}}",
+  "password": "wrong-password"
+}
+```
+
+Expected:
+
+```text
+401 Unauthorized
+```
+
+### 20.4 Invalid Register Email
+
+```http
+POST {{baseUrl}}/api/auth/register
+```
+
+Body:
+
+```json
+{
+  "name": "Bad Email",
+  "email": "not-an-email",
+  "password": "{{testPassword}}",
+  "role": "Buyer"
+}
+```
+
+Expected:
+
+```text
+400 Bad Request
+```
+
+### 20.5 Register Admin Role Publicly
+
+```http
+POST {{baseUrl}}/api/auth/register
+```
+
+Body:
+
+```json
+{
+  "name": "Invalid Admin",
+  "email": "invalid.admin@example.com",
+  "password": "{{testPassword}}",
+  "role": "Admin"
+}
+```
+
+Expected:
+
+```text
+400 Bad Request
+```
+
+Expected message:
+
+```text
+Role must be Buyer or BusinessOwner
+```
+
+### 20.6 Invalid Product Price
+
+```http
+POST {{baseUrl}}/api/seller/products
+```
+
+Auth:
+
+```text
+Bearer Token: {{sellerToken}}
+```
+
+Body:
+
+```json
+{
+  "name": "Invalid Product",
+  "price": -1,
+  "stock": 10,
+  "categoryId": "{{categoryId}}",
+  "sku": "INVALID-PRICE-001"
+}
+```
+
+Expected:
+
+```text
+400 Bad Request
+```
+
+### 20.7 Invalid Cart Quantity
+
+```http
+POST {{baseUrl}}/api/cart
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
+
+```json
+{
+  "productId": "{{productId}}",
+  "quantity": 0
+}
+```
+
+Expected:
+
+```text
+400 Bad Request
+```
+
+Expected message:
+
+```text
+Quantity must be at least 1
+```
+
+### 20.8 Empty Cart Checkout
+
+```http
+POST {{baseUrl}}/api/orders/checkout
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Expected:
+
+```text
+400 Bad Request
+```
+
+Expected message:
+
+```text
+Cart is empty
+```
+
+This only happens if the buyer cart has no items.
+
+### 20.9 Invalid Review Rating
+
+```http
+POST {{baseUrl}}/api/reviews
+```
+
+Auth:
+
+```text
+Bearer Token: {{buyerToken}}
+```
+
+Body:
+
+```json
+{
+  "productId": "{{productId}}",
+  "rating": 6,
+  "comment": "Invalid rating"
+}
+```
+
+Expected:
+
+```text
+400 Bad Request
+```
+
+Expected message:
+
+```text
+Rating must be between 1 and 5
+```
+
+### 20.10 Resource Not Found
+
+```http
+GET {{baseUrl}}/api/products/not-found
+```
+
+Auth:
+
+```text
+No Auth
+```
+
+Expected:
+
+```text
+404 Not Found
+```
+
+## 21. Direct Endpoint Checklist
+
+Use this as a final checklist after testing.
+
+| Done | Method | URL | Auth |
+|---|---|---|---|
+|  | `GET` | `{{baseUrl}}/` | none |
+|  | `POST` | `{{baseUrl}}/api/auth/register` | none |
+|  | `POST` | `{{baseUrl}}/api/auth/login` | none |
+|  | `POST` | `{{baseUrl}}/api/auth/logout` | any user |
+|  | `GET` | `{{baseUrl}}/api/auth/profile` | any user |
+|  | `PUT` | `{{baseUrl}}/api/auth/profile` | any user |
+|  | `GET` | `{{baseUrl}}/api/admin/users` | admin |
+|  | `POST` | `{{baseUrl}}/api/admin/business-owner` | admin |
+|  | `PUT` | `{{baseUrl}}/api/admin/business-owner/{{sellerId}}` | admin |
+|  | `DELETE` | `{{baseUrl}}/api/admin/business-owner/{{sellerId}}` | admin |
+|  | `GET` | `{{baseUrl}}/api/admin/products` | admin |
+|  | `DELETE` | `{{baseUrl}}/api/admin/products/{{productId}}` | admin |
+|  | `GET` | `{{baseUrl}}/api/admin/orders` | admin |
+|  | `GET` | `{{baseUrl}}/api/admin/notifications` | admin |
+|  | `GET` | `{{baseUrl}}/api/admin/analytics` | admin |
+|  | `GET` | `{{baseUrl}}/api/seller/products` | seller |
+|  | `POST` | `{{baseUrl}}/api/seller/products` | seller |
+|  | `PUT` | `{{baseUrl}}/api/seller/products/{{productId}}` | seller |
+|  | `DELETE` | `{{baseUrl}}/api/seller/products/{{productId}}` | seller |
+|  | `GET` | `{{baseUrl}}/api/seller/orders` | seller |
+|  | `GET` | `{{baseUrl}}/api/seller/payments` | seller |
+|  | `PUT` | `{{baseUrl}}/api/seller/profile` | seller |
+|  | `GET` | `{{baseUrl}}/api/categories` | none |
+|  | `GET` | `{{baseUrl}}/api/categories/{{categoryId}}` | none |
+|  | `POST` | `{{baseUrl}}/api/categories` | admin |
+|  | `PUT` | `{{baseUrl}}/api/categories/{{categoryId}}` | admin |
+|  | `DELETE` | `{{baseUrl}}/api/categories/{{categoryId}}` | admin |
+|  | `GET` | `{{baseUrl}}/api/products` | none |
+|  | `GET` | `{{baseUrl}}/api/products/search?search=headphones` | none |
+|  | `GET` | `{{baseUrl}}/api/products/top-rated?limit=10` | none |
+|  | `GET` | `{{baseUrl}}/api/products/category/{{categoryId}}` | none |
+|  | `GET` | `{{baseUrl}}/api/products/{{productId}}` | none |
+|  | `POST` | `{{baseUrl}}/api/products` | admin or seller |
+|  | `PUT` | `{{baseUrl}}/api/products/{{productId}}` | admin or seller |
+|  | `DELETE` | `{{baseUrl}}/api/products/{{productId}}` | admin or seller |
+|  | `GET` | `{{baseUrl}}/api/cart` | buyer |
+|  | `POST` | `{{baseUrl}}/api/cart` | buyer |
+|  | `PUT` | `{{baseUrl}}/api/cart/{{cartItemId}}` | buyer |
+|  | `DELETE` | `{{baseUrl}}/api/cart/{{cartItemId}}` | buyer |
+|  | `GET` | `{{baseUrl}}/api/favorites` | buyer |
+|  | `POST` | `{{baseUrl}}/api/favorites` | buyer |
+|  | `DELETE` | `{{baseUrl}}/api/favorites/{{favoriteId}}` | buyer |
+|  | `GET` | `{{baseUrl}}/api/reviews/{{productId}}` | none |
+|  | `POST` | `{{baseUrl}}/api/reviews` | buyer |
+|  | `GET` | `{{baseUrl}}/api/orders` | any user |
+|  | `GET` | `{{baseUrl}}/api/orders/{{orderId}}` | owner/admin/seller |
+|  | `PUT` | `{{baseUrl}}/api/orders/{{orderId}}/status` | admin or seller |
+|  | `POST` | `{{baseUrl}}/api/orders/checkout` | buyer |
+|  | `POST` | `{{baseUrl}}/api/checkout` | buyer |
+|  | `GET` | `{{baseUrl}}/api/payments` | any user |
+|  | `GET` | `{{baseUrl}}/api/payments/{{paymentId}}` | owner/admin/seller |
+|  | `POST` | `{{baseUrl}}/api/payments/paypal` | buyer |
+|  | `GET` | `{{baseUrl}}/api/notifications` | any user |
+|  | `POST` | `{{baseUrl}}/api/notifications` | admin |
+|  | `PUT` | `{{baseUrl}}/api/notifications/{{notificationId}}/read` | visible notification user |
+
+## 22. Common Problems While Testing
+
+| Problem | Cause | Fix |
 |---|---|---|
-| Missing token | `GET /api/cart` | `401` |
-| Wrong role | `GET /api/admin/users` with `buyerToken` | `403` |
-| Invalid login | `POST /api/auth/login` with wrong password | `401` |
-| Invalid product price | `POST /api/products` with negative `price` | `400` |
-| Invalid cart quantity | `POST /api/cart` with `quantity: 0` | `400` |
-| Invalid review rating | `POST /api/reviews` with `rating: 6` | `400` |
-| Missing product | `GET /api/products/not-found` | `404` |
-
-## 19. Endpoint Checklist
-
-Use this checklist when building a complete Postman collection.
-
-| Done | Method | URL |
-|---|---|---|
-|  | `GET` | `{{baseUrl}}/` |
-|  | `POST` | `{{baseUrl}}/api/auth/register` |
-|  | `POST` | `{{baseUrl}}/api/auth/login` |
-|  | `POST` | `{{baseUrl}}/api/auth/logout` |
-|  | `GET` | `{{baseUrl}}/api/auth/profile` |
-|  | `PUT` | `{{baseUrl}}/api/auth/profile` |
-|  | `GET` | `{{baseUrl}}/api/admin/users` |
-|  | `POST` | `{{baseUrl}}/api/admin/business-owner` |
-|  | `PUT` | `{{baseUrl}}/api/admin/business-owner/{{sellerId}}` |
-|  | `DELETE` | `{{baseUrl}}/api/admin/business-owner/{{sellerId}}` |
-|  | `GET` | `{{baseUrl}}/api/admin/products` |
-|  | `DELETE` | `{{baseUrl}}/api/admin/products/{{productId}}` |
-|  | `GET` | `{{baseUrl}}/api/admin/orders` |
-|  | `GET` | `{{baseUrl}}/api/admin/notifications` |
-|  | `GET` | `{{baseUrl}}/api/admin/analytics` |
-|  | `GET` | `{{baseUrl}}/api/seller/products` |
-|  | `POST` | `{{baseUrl}}/api/seller/products` |
-|  | `PUT` | `{{baseUrl}}/api/seller/products/{{productId}}` |
-|  | `DELETE` | `{{baseUrl}}/api/seller/products/{{productId}}` |
-|  | `GET` | `{{baseUrl}}/api/seller/orders` |
-|  | `GET` | `{{baseUrl}}/api/seller/payments` |
-|  | `PUT` | `{{baseUrl}}/api/seller/profile` |
-|  | `GET` | `{{baseUrl}}/api/categories` |
-|  | `GET` | `{{baseUrl}}/api/categories/{{categoryId}}` |
-|  | `POST` | `{{baseUrl}}/api/categories` |
-|  | `PUT` | `{{baseUrl}}/api/categories/{{categoryId}}` |
-|  | `DELETE` | `{{baseUrl}}/api/categories/{{categoryId}}` |
-|  | `GET` | `{{baseUrl}}/api/products` |
-|  | `GET` | `{{baseUrl}}/api/products/search?search=headphones` |
-|  | `GET` | `{{baseUrl}}/api/products/top-rated?limit=10` |
-|  | `GET` | `{{baseUrl}}/api/products/category/{{categoryId}}` |
-|  | `GET` | `{{baseUrl}}/api/products/{{productId}}` |
-|  | `POST` | `{{baseUrl}}/api/products` |
-|  | `PUT` | `{{baseUrl}}/api/products/{{productId}}` |
-|  | `DELETE` | `{{baseUrl}}/api/products/{{productId}}` |
-|  | `GET` | `{{baseUrl}}/api/cart` |
-|  | `POST` | `{{baseUrl}}/api/cart` |
-|  | `PUT` | `{{baseUrl}}/api/cart/{{cartItemId}}` |
-|  | `DELETE` | `{{baseUrl}}/api/cart/{{cartItemId}}` |
-|  | `GET` | `{{baseUrl}}/api/favorites` |
-|  | `POST` | `{{baseUrl}}/api/favorites` |
-|  | `DELETE` | `{{baseUrl}}/api/favorites/{{favoriteId}}` |
-|  | `GET` | `{{baseUrl}}/api/reviews/{{productId}}` |
-|  | `POST` | `{{baseUrl}}/api/reviews` |
-|  | `GET` | `{{baseUrl}}/api/orders` |
-|  | `GET` | `{{baseUrl}}/api/orders/{{orderId}}` |
-|  | `PUT` | `{{baseUrl}}/api/orders/{{orderId}}/status` |
-|  | `POST` | `{{baseUrl}}/api/orders/checkout` |
-|  | `POST` | `{{baseUrl}}/api/checkout` |
-|  | `GET` | `{{baseUrl}}/api/payments` |
-|  | `GET` | `{{baseUrl}}/api/payments/{{paymentId}}` |
-|  | `POST` | `{{baseUrl}}/api/payments/paypal` |
-|  | `GET` | `{{baseUrl}}/api/notifications` |
-|  | `POST` | `{{baseUrl}}/api/notifications` |
-|  | `PUT` | `{{baseUrl}}/api/notifications/{{notificationId}}/read` |
+| `401 Missing authorization token` | No bearer token | Add token in Authorization tab |
+| `401 Invalid authorization token` | Bad/old token or wrong JWT secret | Login again and save new token |
+| `403 permission` | Wrong user role | Use admin/seller/buyer token required by route |
+| `Email already registered` | Reusing old email | Change email variable |
+| `Category already exists` | Reusing category name | Change category name |
+| duplicate SKU error | Reusing product SKU | Change `productSku` |
+| `Category does not exist` | Wrong `categoryId` | Create/list category and copy correct ID |
+| `Seller must be an admin or business owner account` | Wrong `sellerId` | Use a `BusinessOwner` user ID |
+| `Product not found` | Wrong product ID or inactive product | Create a new active product |
+| `Not enough product stock` | Quantity is higher than stock | Lower cart quantity or update product stock |
+| `Cart is empty` | Checkout after cart was cleared | Add product to cart again |
+| `Order is already paid` | Paying same order twice | Create a new order |
