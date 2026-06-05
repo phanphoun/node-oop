@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import 'reflect-metadata';
 import { testDataSource } from './helpers/test-datasource';
 import type { Express } from 'express';
@@ -20,7 +21,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await testDataSource.destroy();
+  if (testDataSource.isInitialized) {
+    await testDataSource.destroy();
+  }
 });
 
 describe('Product API', () => {
