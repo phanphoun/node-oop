@@ -179,6 +179,7 @@ patch(AdminService.prototype, 'listUsers', async () => paged([
 patch(AdminService.prototype, 'createBusinessOwner', async () => user('seller-1', UserRole.BusinessOwner));
 patch(AdminService.prototype, 'updateBusinessOwner', async () => user('seller-1', UserRole.BusinessOwner));
 patch(AdminService.prototype, 'removeBusinessOwner', async () => undefined);
+patch(AdminService.prototype, 'removeUser', async () => undefined);
 patch(AdminService.prototype, 'analytics', async () => ({
   users: 3,
   sellers: 1,
@@ -289,6 +290,7 @@ const endpointCases: EndpointCase[] = [
   { name: 'PUT /api/auth/profile', method: 'PUT', path: '/api/auth/profile', expectedStatus: 200, token: 'buyer', body: { name: 'Updated Buyer' } },
 
   { name: 'GET /api/admin/users', method: 'GET', path: '/api/admin/users', expectedStatus: 200, token: 'admin' },
+  { name: 'DELETE /api/admin/users/:id', method: 'DELETE', path: '/api/admin/users/buyer-1', expectedStatus: 204, token: 'admin' },
   { name: 'POST /api/admin/business-owner', method: 'POST', path: '/api/admin/business-owner', expectedStatus: 201, token: 'admin', body: { name: 'Seller User', email: 'seller@example.com', password: 'secret1' } },
   { name: 'PUT /api/admin/business-owner/:id', method: 'PUT', path: '/api/admin/business-owner/seller-1', expectedStatus: 200, token: 'admin', body: { name: 'Updated Seller' } },
   { name: 'DELETE /api/admin/business-owner/:id', method: 'DELETE', path: '/api/admin/business-owner/seller-1', expectedStatus: 204, token: 'admin' },

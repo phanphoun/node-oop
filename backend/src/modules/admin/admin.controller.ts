@@ -67,6 +67,15 @@ export const deleteBusinessOwner = async (req: AuthRequest, res: Response, next:
   }
 };
 
+export const deleteUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    await adminService.removeUser(req.params.id);
+    noContent(res);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const listProducts = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     success(res, await productService.list({ ...req.query, includeInactive: true }));
