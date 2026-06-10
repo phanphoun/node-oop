@@ -36,6 +36,7 @@ const user = (id: string, role: UserRole) => ({
   role,
   phone: null,
   address: null,
+  profileImage: null,
   status: true,
   createdAt: now,
   updatedAt: now,
@@ -287,7 +288,7 @@ const endpointCases: EndpointCase[] = [
   { name: 'POST /api/auth/login', method: 'POST', path: '/api/auth/login', expectedStatus: 200, body: { email: 'buyer@example.com', password: 'secret1' } },
   { name: 'POST /api/auth/logout', method: 'POST', path: '/api/auth/logout', expectedStatus: 200, token: 'buyer' },
   { name: 'GET /api/auth/profile', method: 'GET', path: '/api/auth/profile', expectedStatus: 200, token: 'buyer' },
-  { name: 'PUT /api/auth/profile', method: 'PUT', path: '/api/auth/profile', expectedStatus: 200, token: 'buyer', body: { name: 'Updated Buyer' } },
+  { name: 'PUT /api/auth/profile', method: 'PUT', path: '/api/auth/profile', expectedStatus: 200, token: 'buyer', body: { name: 'Updated Buyer', profileImage: 'https://example.com/profile.jpg' } },
 
   { name: 'GET /api/admin/users', method: 'GET', path: '/api/admin/users', expectedStatus: 200, token: 'admin' },
   { name: 'DELETE /api/admin/users/:id', method: 'DELETE', path: '/api/admin/users/buyer-1', expectedStatus: 204, token: 'admin' },

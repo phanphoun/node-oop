@@ -21,6 +21,7 @@ export class AuthService {
     role?: UserRole;
     phone?: string;
     address?: string;
+    profileImage?: string | null;
   }) {
     const existing = await this.userRepo.findOneBy({ email: data.email });
     if (existing) {
@@ -37,6 +38,7 @@ export class AuthService {
       role: data.role || UserRole.Buyer,
       phone: data.phone || null,
       address: data.address || null,
+      profileImage: data.profileImage || null,
     });
 
     await this.userRepo.save(user);
@@ -83,7 +85,7 @@ export class AuthService {
 
   async updateProfile(
     userId: string,
-    data: { name?: string; phone?: string | null; address?: string | null },
+    data: { name?: string; phone?: string | null; address?: string | null; profileImage?: string | null },
   ) {
     const user = await this.userRepo.findOneBy({ id: userId });
     if (!user) {
@@ -99,6 +101,9 @@ export class AuthService {
     if (data.address !== undefined) {
       user.address = data.address;
     }
+    if (data.profileImage !== undefined) {
+      user.profileImage = data.profileImage;
+    }
 
     await this.userRepo.save(user);
     return this.toPublicUser(user);
@@ -112,6 +117,7 @@ export class AuthService {
       role: user.role,
       phone: user.phone,
       address: user.address,
+      profileImage: user.profileImage,
       status: user.status,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

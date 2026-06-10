@@ -8,7 +8,7 @@ import { success } from '../../core/utils/response.util.js';
 const authService = new AuthService();
 
 const validateRegistration = (req: Request) => {
-  const { name, email, password, role, phone, address } = req.body as Record<string, unknown>;
+  const { name, email, password, role, phone, address, profileImage } = req.body as Record<string, unknown>;
 
   if (!name || typeof name !== 'string' || name.trim().length < 2) {
     throw new BadRequestError('Name must be at least 2 characters');
@@ -30,6 +30,7 @@ const validateRegistration = (req: Request) => {
     role: role as UserRole | undefined,
     phone: typeof phone === 'string' ? phone : undefined,
     address: typeof address === 'string' ? address : undefined,
+    profileImage: typeof profileImage === 'string' ? profileImage : undefined,
   };
 };
 
@@ -75,11 +76,12 @@ export const profile = async (req: AuthRequest, res: Response, next: NextFunctio
 
 export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { name, phone, address } = req.body as Record<string, unknown>;
+    const { name, phone, address, profileImage } = req.body as Record<string, unknown>;
     const result = await authService.updateProfile(req.user!.id, {
       name: typeof name === 'string' ? name.trim() : undefined,
       phone: typeof phone === 'string' ? phone : undefined,
       address: typeof address === 'string' ? address : undefined,
+      profileImage: typeof profileImage === 'string' ? profileImage : undefined,
     });
 
     success(res, result, 200, 'Profile updated successfully');

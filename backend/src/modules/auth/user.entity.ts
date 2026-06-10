@@ -30,6 +30,9 @@ export class User {
   @Column({ type: 'text', nullable: true })
   address!: string | null;
 
+  @Column({ name: 'profile_image', type: 'text', nullable: true })
+  profileImage!: string | null;
+
   @Column({ type: 'boolean', default: true })
   status!: boolean;
 

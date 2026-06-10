@@ -153,6 +153,7 @@ export class AdminService {
       role: user.role,
       phone: user.phone,
       address: user.address,
+      profileImage: user.profileImage,
       status: user.status,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
