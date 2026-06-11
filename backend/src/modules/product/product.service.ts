@@ -28,7 +28,7 @@ export class ProductService {
   private categoryRepo = AppDataSource.getRepository(Category);
   private userRepo = AppDataSource.getRepository(User);
 
-  async list(query: ProductListQuery = {}) {
+  async list(query: ProductListQuery = {}, actor?: { role: UserRole }) {
     const { page, limit, skip } = getPagination(query);
     const search = toOptionalString(query.search);
     const category = toOptionalString(query.category);
@@ -36,7 +36,12 @@ export class ProductService {
     const maxPrice = toOptionalNumber(query.maxPrice);
     const sort = toOptionalString(query.sort);
     const sellerId = toOptionalString(query.sellerId);
-    const includeInactive = query.includeInactive === 'true' || query.includeInactive === true;
+    const includeInactive =
+      query.includeInactive === 'true' || query.includeInactive === true;
+
+    if (includeInactive && (!actor || !(actor.role === UserRole.Admin || actor.role === UserRole.BusinessOwner))) {
+      throw new ForbiddenError('Including inactive products requires seller or admin access');
+    }
 
     const builder = this.productRepo
       .createQueryBuilder('product')

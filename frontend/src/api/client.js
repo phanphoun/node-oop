@@ -20,13 +20,13 @@ const buildUrl = (path, query) => {
 }
 
 export async function apiRequest(path, options = {}) {
-  const { query, body, token = authStorage.getToken(), ...fetchOptions } = options
+  const { query, body, token = authStorage.getToken(), auth = true, ...fetchOptions } = options
   const headers = new Headers(fetchOptions.headers || {})
 
   if (body !== undefined) {
     headers.set('Content-Type', 'application/json')
   }
-  if (token) {
+  if (auth && token) {
     headers.set('Authorization', `Bearer ${token}`)
   }
 
@@ -37,10 +37,29 @@ export async function apiRequest(path, options = {}) {
   })
 
   const contentType = response.headers.get('content-type') || ''
-  const payload = contentType.includes('application/json') ? await response.json() : null
+  const isJson = contentType.includes('application/json')
 
-  if (!response.ok || payload?.success === false) {
-    const error = new Error(payload?.message || `Request failed with status ${response.status}`)
+  let payload = null
+  if (isJson) {
+    try {
+      payload = await response.json()
+    } catch {
+      payload = null
+    }
+  }
+
+  if (!response.ok) {
+    const message = (payload && typeof payload === 'object' && payload.message)
+      ? payload.message
+      : `Request failed with status ${response.status}`
+    const error = new Error(message)
+    error.status = response.status
+    error.payload = payload
+    throw error
+  }
+
+  if (payload && typeof payload === 'object' && payload.success === false) {
+    const error = new Error(payload.message || 'Request failed')
     error.status = response.status
     error.payload = payload
     throw error
