@@ -105,6 +105,19 @@ export class AdminService {
     await this.userRepo.save(user);
   }
 
+  async removeUser(id: string) {
+    const user = await this.userRepo.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+    if (user.role === UserRole.Admin) {
+      throw new BadRequestError('Admin accounts cannot be removed');
+    }
+
+    user.status = false;
+    await this.userRepo.save(user);
+  }
+
   async analytics() {
     const [users, sellers, buyers, products, orders, payments] = await Promise.all([
       this.userRepo.count(),
@@ -140,6 +153,7 @@ export class AdminService {
       role: user.role,
       phone: user.phone,
       address: user.address,
+      profileImage: user.profileImage,
       status: user.status,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

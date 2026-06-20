@@ -4,6 +4,7 @@ import {
   createBusinessOwner,
   deleteBusinessOwner,
   deleteProduct,
+  deleteUser,
   listNotifications,
   listOrders,
   listProducts,
@@ -19,6 +20,7 @@ const router = Router();
 router.use(authenticate, requireRoles(UserRole.Admin));
 
 router.get('/users', listUsers);
+router.delete('/users/:id', deleteUser);
 router.post('/business-owner', createBusinessOwner);
 router.put('/business-owner/:id', updateBusinessOwner);
 router.delete('/business-owner/:id', deleteBusinessOwner);

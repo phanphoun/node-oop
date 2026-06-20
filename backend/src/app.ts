@@ -7,7 +7,11 @@ import { NotFoundError } from './core/errors/not-found.error.js';
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
+
+app.get('/', (req,res) =>{
+    res.send('Welcome to buynow website.')
+})
 
 app.get('/', (req,res) =>{
     res.send('Welcome to buynow website.')

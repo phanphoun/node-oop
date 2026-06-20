@@ -8,7 +8,7 @@ import { success } from '../../core/utils/response.util.js';
 const authService = new AuthService();
 
 const validateRegistration = (req: Request) => {
-  const { name, email, password, role, phone, address } = req.body as Record<string, unknown>;
+  const { name, email, password, role, phone, address, profileImage } = req.body as Record<string, unknown>;
 
   if (!name || typeof name !== 'string' || name.trim().length < 2) {
     throw new BadRequestError('Name must be at least 2 characters');
@@ -19,17 +19,21 @@ const validateRegistration = (req: Request) => {
   if (!password || typeof password !== 'string' || password.length < 6) {
     throw new BadRequestError('Password must be at least 6 characters');
   }
-  if (role !== undefined && (!Object.values(UserRole).includes(role as UserRole) || role === UserRole.Admin)) {
-    throw new BadRequestError('Role must be Buyer or BusinessOwner');
-  }
+
+  const normalizedName = typeof name === 'string' ? name.trim() : '';
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  const normalizedPassword = typeof password === 'string' ? password : '';
+  const normalizedPhone = typeof phone === 'string' ? phone : undefined;
+  const normalizedAddress = typeof address === 'string' ? address : undefined;
+  const normalizedProfileImage = typeof profileImage === 'string' ? profileImage : undefined;
 
   return {
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
-    password,
-    role: role as UserRole | undefined,
-    phone: typeof phone === 'string' ? phone : undefined,
-    address: typeof address === 'string' ? address : undefined,
+    name: normalizedName,
+    email: normalizedEmail,
+    password: normalizedPassword,
+    phone: normalizedPhone,
+    address: normalizedAddress,
+    profileImage: normalizedProfileImage,
   };
 };
 
@@ -53,7 +57,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       throw new BadRequestError('Password is required');
     }
 
-    const result = await authService.login({ email: email.trim().toLowerCase(), password });
+    const result = await authService.login({
+      email: email.trim().toLowerCase(),
+      password,
+    });
     success(res, result, 200, 'User logged in successfully');
   } catch (err) {
     next(err);
@@ -75,11 +82,12 @@ export const profile = async (req: AuthRequest, res: Response, next: NextFunctio
 
 export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { name, phone, address } = req.body as Record<string, unknown>;
+    const { name, phone, address, profileImage } = req.body as Record<string, unknown>;
     const result = await authService.updateProfile(req.user!.id, {
       name: typeof name === 'string' ? name.trim() : undefined,
       phone: typeof phone === 'string' ? phone : undefined,
       address: typeof address === 'string' ? address : undefined,
+      profileImage: typeof profileImage === 'string' ? profileImage : undefined,
     });
 
     success(res, result, 200, 'Profile updated successfully');

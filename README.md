@@ -1,10 +1,12 @@
 # node-oop
 
-Full-stack application with **Node.js / Express / TypeORM** backend and **Vue 3 / Vite** frontend.
+Full-stack application with **Node.js / Express / TypeORM** backend and **React 19 + Vite** frontend.
 
 ## Structure
 
 ```
+
+
 node-oop/
 ├── backend/          # Express 5 API server
 │   ├── src/
@@ -12,11 +14,11 @@ node-oop/
 │   │   ├── constants/
 │   │   ├── core/
 │   │   ├── database/     # TypeORM data-source & migrations
-│   │   ├── module/       # Feature modules
+│   │   ├── modules/       # Feature modules
 │   │   ├── routes/
 │   │   └── shared/
 │   └── index.js
-├── frontend/         # Vue 3 + Vite SPA
+├── frontend/         # React 19 + Vite SPA
 │   └── src/
 └── README.md
 ```
@@ -59,4 +61,4 @@ npm run dev            # Vite dev server
 | Database | MySQL (TypeORM) |
 | Auth | JWT + bcrypt |
 | Validation | class-validator |
-| Frontend | Vue 3 + Vite |
+| Frontend | React 19 + Vite |

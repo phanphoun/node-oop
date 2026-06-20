@@ -106,8 +106,6 @@ npm test
 
 The test suite starts the Express app on a temporary local port and covers every registered endpoint. Service methods are mocked with fixtures, so the suite validates routing, authentication middleware, role middleware, controller status codes, and response shape without requiring a live MySQL database.
 
-For manual API testing in Postman, see [`docs/postman-api-testing.md`](docs/postman-api-testing.md).
-
 ## Database Migrations
 
 Migrations live in `src/database/migrations`. Each migration creates the final schema for its module, so there are no separate catch-up files like `CompleteBuyNowSchema`, `UpdateProductsSchema`, `UpdatePaymentsSchema`, or `AddUpdatedAtToUsers`.
