@@ -5,7 +5,7 @@ import { NotFoundError } from '../../core/errors/not-found.error.js';
 import { Category } from './category.entity.js';
 
 export class CategoryService {
-  private categoryRepo = AppDataSource.getRepository(Category);
+  private get categoryRepo() { return AppDataSource.getRepository(Category); }
 
   async list() {
     return this.categoryRepo.find({ order: { name: 'ASC' } });

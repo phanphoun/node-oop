@@ -6,7 +6,7 @@ import { NotFoundError } from './core/errors/not-found.error.js';
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(express.json({ limit: '2mb' }));
 
 app.get('/', (req,res) =>{

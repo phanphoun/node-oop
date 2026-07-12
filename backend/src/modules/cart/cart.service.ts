@@ -7,9 +7,9 @@ import { Cart } from './cart.entity.js';
 import { CartItem } from './cart-item.entity.js';
 
 export class CartService {
-  private cartRepo = AppDataSource.getRepository(Cart);
-  private cartItemRepo = AppDataSource.getRepository(CartItem);
-  private productRepo = AppDataSource.getRepository(Product);
+  private get cartRepo() { return AppDataSource.getRepository(Cart); }
+  private get cartItemRepo() { return AppDataSource.getRepository(CartItem); }
+  private get productRepo() { return AppDataSource.getRepository(Product); }
 
   async getCart(buyerId: string) {
     let cart = await this.cartRepo.findOne({

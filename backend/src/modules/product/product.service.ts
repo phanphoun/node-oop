@@ -24,9 +24,9 @@ export type ProductListQuery = {
 };
 
 export class ProductService {
-  private productRepo = AppDataSource.getRepository(Product);
-  private categoryRepo = AppDataSource.getRepository(Category);
-  private userRepo = AppDataSource.getRepository(User);
+  private get productRepo() { return AppDataSource.getRepository(Product); }
+  private get categoryRepo() { return AppDataSource.getRepository(Category); }
+  private get userRepo() { return AppDataSource.getRepository(User); }
 
   async list(query: ProductListQuery = {}, actor?: { role: UserRole }) {
     const { page, limit, skip } = getPagination(query);

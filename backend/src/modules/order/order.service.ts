@@ -15,9 +15,9 @@ import { Order } from './order.entity.js';
 import { OrderItem } from './order-item.entity.js';
 
 export class OrderService {
-  private orderRepo = AppDataSource.getRepository(Order);
-  private orderItemRepo = AppDataSource.getRepository(OrderItem);
-  private notificationService = new NotificationService();
+  private get orderRepo() { return AppDataSource.getRepository(Order); }
+  private get orderItemRepo() { return AppDataSource.getRepository(OrderItem); }
+  private get notificationService() { return new NotificationService(); }
 
   async checkout(buyerId: string) {
     const order = await AppDataSource.transaction(async (manager) => {

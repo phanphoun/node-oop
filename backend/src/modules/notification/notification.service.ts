@@ -4,7 +4,7 @@ import { AppDataSource } from '../../database/data-source.js';
 import { Notification } from './notification.entity.js';
 
 export class NotificationService {
-  private notificationRepo = AppDataSource.getRepository(Notification);
+  private get notificationRepo() { return AppDataSource.getRepository(Notification); }
 
   async listForUser(userId: string) {
     return this.notificationRepo.find({

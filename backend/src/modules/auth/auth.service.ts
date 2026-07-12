@@ -12,7 +12,7 @@ import { UnauthorizedError } from '../../core/errors/unauthorized.error.js';
 const SALT_ROUNDS = 10;
 
 export class AuthService {
-  private userRepo = AppDataSource.getRepository(User);
+  private get userRepo() { return AppDataSource.getRepository(User); }
 
   async register(data: {
     name: string;

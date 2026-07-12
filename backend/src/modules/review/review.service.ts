@@ -6,8 +6,8 @@ import { Product } from '../product/product.entity.js';
 import { Review } from './review.entity.js';
 
 export class ReviewService {
-  private reviewRepo = AppDataSource.getRepository(Review);
-  private productRepo = AppDataSource.getRepository(Product);
+  private get reviewRepo() { return AppDataSource.getRepository(Review); }
+  private get productRepo() { return AppDataSource.getRepository(Product); }
 
   async listByProduct(productId: string) {
     const reviews = await this.reviewRepo.find({

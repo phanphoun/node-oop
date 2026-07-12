@@ -12,10 +12,10 @@ import { Payment } from './payment.entity.js';
 import { PayPalService } from './paypal.service.js';
 
 export class PaymentService {
-  private paymentRepo = AppDataSource.getRepository(Payment);
-  private orderRepo = AppDataSource.getRepository(Order);
-  private orderService = new OrderService();
-  private paypalService = new PayPalService();
+  private get paymentRepo() { return AppDataSource.getRepository(Payment); }
+  private get orderRepo() { return AppDataSource.getRepository(Order); }
+  private get orderService() { return new OrderService(); }
+  private get paypalService() { return new PayPalService(); }
 
   async payWithPayPal(buyerId: string, orderId: string) {
     const order = await this.orderRepo.findOneBy({ id: orderId });

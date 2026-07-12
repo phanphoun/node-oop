@@ -6,8 +6,8 @@ import { Product } from '../product/product.entity.js';
 import { Favorite } from './favorite.entity.js';
 
 export class FavoriteService {
-  private favoriteRepo = AppDataSource.getRepository(Favorite);
-  private productRepo = AppDataSource.getRepository(Product);
+  private get favoriteRepo() { return AppDataSource.getRepository(Favorite); }
+  private get productRepo() { return AppDataSource.getRepository(Product); }
 
   async list(buyerId: string) {
     return this.favoriteRepo.find({
