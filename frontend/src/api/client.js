@@ -8,7 +8,10 @@ export const authStorage = {
 }
 
 const buildUrl = (path, query) => {
-  const url = new URL(`${API_BASE_URL}${path}`)
+  // window.location.origin as base keeps this valid for BOTH absolute
+  // bases (http://host/api) and relative bases (/api) — a relative URL
+  // with no base throws "Failed to construct 'URL': Invalid URL".
+  const url = new URL(`${API_BASE_URL}${path}`, window.location.origin)
   if (query) {
     Object.entries(query).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
